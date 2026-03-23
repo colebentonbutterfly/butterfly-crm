@@ -24,24 +24,35 @@ export async function PUT(req: NextRequest) {
 
   const { ids, location } = parsed.data;
 
-  // Get items before update for logging
-  const items = await prisma.item.findMany({ where: { id: { in: ids } } });
+  try {
+    const username = getUsername(session);
 
-  const result = await prisma.item.updateMany({
-    where: { id: { in: ids } },
-    data: { location },
-  });
+    const result = await prisma.$transaction(async (tx) => {
+      // Get items before update for logging
+      const items = await tx.item.findMany({ where: { id: { in: ids } } });
 
-  // Log each move
-  const username = getUsername(session);
-  await prisma.activityLog.createMany({
-    data: items.map((item) => ({
-      itemId: item.id,
-      action: "moved",
-      details: `Batch moved from ${item.location} to ${location}`,
-      user: username,
-    })),
-  });
+      const updateResult = await tx.item.updateMany({
+        where: { id: { in: ids } },
+        data: { location },
+      });
 
-  return NextResponse.json({ updated: result.count });
+      // Log each move
+      if (items.length > 0) {
+        await tx.activityLog.createMany({
+          data: items.map((item) => ({
+            itemId: item.id,
+            action: "moved",
+            details: `Batch moved from ${item.location} to ${location}`,
+            user: username,
+          })),
+        });
+      }
+
+      return updateResult;
+    });
+
+    return NextResponse.json({ updated: result.count });
+  } catch {
+    return NextResponse.json({ error: "Failed to batch transfer items" }, { status: 500 });
+  }
 }

@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
-import { requireAuth, getUsername } from "@/lib/api-auth";
+import { requireAuth } from "@/lib/api-auth";
 import { rateLimit } from "@/lib/rate-limit";
 import { z } from "zod";
 
@@ -14,31 +14,35 @@ export async function GET() {
   const { error: authError } = await requireAuth();
   if (authError) return authError;
 
-  const boxes = await prisma.box.findMany({
-    orderBy: { number: "asc" },
-    include: {
-      items: {
-        select: {
-          id: true,
-          name: true,
-          category: true,
-          location: true,
-          barcode: true,
-          photoUrl: true,
-          estimatedValue: true,
-          condition: true,
+  try {
+    const boxes = await prisma.box.findMany({
+      orderBy: { number: "asc" },
+      include: {
+        items: {
+          select: {
+            id: true,
+            name: true,
+            category: true,
+            location: true,
+            barcode: true,
+            photoUrl: true,
+            estimatedValue: true,
+            condition: true,
+          },
+          orderBy: { name: "asc" },
         },
-        orderBy: { name: "asc" },
       },
-    },
-  });
+    });
 
-  return NextResponse.json(boxes.map((box) => ({
-    ...box,
-    count: box.items.length,
-    totalValue: box.items.reduce((sum, i) => sum + (i.estimatedValue || 0), 0),
-    locations: [...new Set(box.items.map((i) => i.location))],
-  })));
+    return NextResponse.json(boxes.map((box) => ({
+      ...box,
+      count: box.items.length,
+      totalValue: box.items.reduce((sum, i) => sum + (Number(i.estimatedValue) || 0), 0),
+      locations: [...new Set(box.items.map((i) => i.location))],
+    })));
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch boxes" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -59,22 +63,26 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || "Validation error" }, { status: 400 });
   }
 
-  // Get next box number
-  const lastBox = await prisma.box.findFirst({ orderBy: { number: "desc" } });
-  const nextNumber = (lastBox?.number || 0) + 1;
+  try {
+    // Use transaction to prevent race condition on box number
+    const box = await prisma.$transaction(async (tx) => {
+      const lastBox = await tx.box.findFirst({ orderBy: { number: "desc" } });
+      const nextNumber = (lastBox?.number || 0) + 1;
+      const barcode = `BOX-${String(nextNumber).padStart(4, "0")}`;
 
-  // Generate box barcode: BOX-XXXX
-  const barcode = `BOX-${String(nextNumber).padStart(4, "0")}`;
+      return tx.box.create({
+        data: {
+          number: nextNumber,
+          barcode,
+          name: parsed.data.name || null,
+          location: parsed.data.location,
+          notes: parsed.data.notes || null,
+        },
+      });
+    });
 
-  const box = await prisma.box.create({
-    data: {
-      number: nextNumber,
-      barcode,
-      name: parsed.data.name || null,
-      location: parsed.data.location,
-      notes: parsed.data.notes || null,
-    },
-  });
-
-  return NextResponse.json(box, { status: 201 });
+    return NextResponse.json(box, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Failed to create box" }, { status: 500 });
+  }
 }

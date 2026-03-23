@@ -253,7 +253,7 @@ export default function ItemDetailPage() {
                           i === activePhoto ? "border-attic-500" : "border-transparent"
                         }`}
                       >
-                        <img src={url} alt="" className="w-full h-full object-cover" />
+                        <img src={url} alt={`Photo ${i + 1} of ${item.name}`} className="w-full h-full object-cover" />
                       </button>
                     ))}
                   </div>
@@ -311,7 +311,7 @@ export default function ItemDetailPage() {
                 {item.boxNumber && (
                   <div>
                     <p className="text-gray-500 dark:text-gray-400">Box / Group</p>
-                    <Link href={`/boxes?box=${encodeURIComponent(item.boxNumber)}`} className="font-medium text-attic-600 hover:underline">{item.boxNumber}</Link>
+                    <Link href="/boxes" className="font-medium text-attic-600 hover:underline">{item.boxNumber}</Link>
                   </div>
                 )}
                 <div>
@@ -403,7 +403,7 @@ export default function ItemDetailPage() {
         {allPhotos.length > 0 && (
           <div className="flex gap-2 mb-4">
             {allPhotos.slice(0, 3).map((url, i) => (
-              <img key={i} src={url} alt="" className="w-32 h-32 object-cover rounded border" />
+              <img key={i} src={url} alt={`Photo ${i + 1} of ${item.name}`} className="w-32 h-32 object-cover rounded border" />
             ))}
           </div>
         )}

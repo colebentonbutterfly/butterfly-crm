@@ -55,34 +55,38 @@ export async function GET(req: NextRequest) {
   const orderField = validSortFields.includes(sortBy) ? sortBy : "updatedAt";
   const orderDir = sortOrder === "asc" ? "asc" : "desc";
 
-  // Export mode: bounded to 5000 items max
-  const exportMode = url.searchParams.get("export") === "true";
-  if (exportMode) {
-    const items = await prisma.item.findMany({
-      where,
-      orderBy: { [orderField]: orderDir },
-      take: 5000,
+  try {
+    // Export mode: bounded to 5000 items max
+    const exportMode = url.searchParams.get("export") === "true";
+    if (exportMode) {
+      const items = await prisma.item.findMany({
+        where,
+        orderBy: { [orderField]: orderDir },
+        take: 5000,
+      });
+      return NextResponse.json(items);
+    }
+
+    const [items, total] = await Promise.all([
+      prisma.item.findMany({
+        where,
+        orderBy: { [orderField]: orderDir },
+        skip: (page - 1) * limit,
+        take: Math.min(limit, 200),
+      }),
+      prisma.item.count({ where }),
+    ]);
+
+    return NextResponse.json({
+      items,
+      total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
-    return NextResponse.json(items);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch items" }, { status: 500 });
   }
-
-  const [items, total] = await Promise.all([
-    prisma.item.findMany({
-      where,
-      orderBy: { [orderField]: orderDir },
-      skip: (page - 1) * limit,
-      take: Math.min(limit, 200),
-    }),
-    prisma.item.count({ where }),
-  ]);
-
-  return NextResponse.json({
-    items,
-    total,
-    page,
-    limit,
-    totalPages: Math.ceil(total / limit),
-  });
 }
 
 export async function POST(req: NextRequest) {
@@ -106,33 +110,41 @@ export async function POST(req: NextRequest) {
   const data = parsed.data;
   const barcode = data.barcode || generateBarcode();
 
-  const item = await prisma.item.create({
-    data: {
-      name: data.name.trim(),
-      description: data.description || null,
-      category: data.category || "Miscellaneous",
-      location: data.location || "Pod 1",
-      condition: data.condition || null,
-      quantity: data.quantity || 1,
-      barcode,
-      photoUrl: data.photoUrl || null,
-      photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : null,
-      notes: data.notes || null,
-      boxNumber: data.boxNumber || null,
-      boxId: data.boxId || null,
-      estimatedValue: data.estimatedValue ?? null,
-      tags: data.tags ? JSON.stringify(data.tags) : null,
-    },
-  });
+  try {
+    const item = await prisma.$transaction(async (tx) => {
+      const created = await tx.item.create({
+        data: {
+          name: data.name.trim(),
+          description: data.description || null,
+          category: data.category || "Miscellaneous",
+          location: data.location || "Pod 1",
+          condition: data.condition || null,
+          quantity: data.quantity || 1,
+          barcode,
+          photoUrl: data.photoUrl || null,
+          photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : null,
+          notes: data.notes || null,
+          boxNumber: data.boxNumber || null,
+          boxId: data.boxId || null,
+          estimatedValue: data.estimatedValue ?? null,
+          tags: data.tags ? JSON.stringify(data.tags) : null,
+        },
+      });
 
-  await prisma.activityLog.create({
-    data: {
-      itemId: item.id,
-      action: "created",
-      details: `Created item "${item.name}" in ${item.location}`,
-      user: getUsername(session),
-    },
-  });
+      await tx.activityLog.create({
+        data: {
+          itemId: created.id,
+          action: "created",
+          details: `Created item "${created.name}" in ${created.location}`,
+          user: getUsername(session),
+        },
+      });
 
-  return NextResponse.json(item, { status: 201 });
+      return created;
+    });
+
+    return NextResponse.json(item, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Failed to create item" }, { status: 500 });
+  }
 }

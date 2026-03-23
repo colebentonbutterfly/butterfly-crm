@@ -133,6 +133,7 @@ export default function InventoryPage() {
       params.set("export", "true");
 
       const res = await fetch(`/api/items?${params}`);
+      if (!res.ok) throw new Error("Export failed");
       const allItems = await res.json();
 
       const headers = ["Name", "Category", "Location", "Condition", "Quantity", "Barcode", "Box/Group", "Est. Value", "Description", "Notes", "Tags", "Created", "Updated"];

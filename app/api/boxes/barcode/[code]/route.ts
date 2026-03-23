@@ -7,24 +7,30 @@ export async function GET(_req: NextRequest, { params }: { params: { code: strin
   if (authError) return authError;
 
   const code = params.code.slice(0, 100);
-  const box = await prisma.box.findUnique({
-    where: { barcode: code },
-    include: {
-      items: {
-        select: {
-          id: true, name: true, category: true, location: true,
-          barcode: true, photoUrl: true, estimatedValue: true,
+  if (!code) return NextResponse.json({ error: "Barcode required" }, { status: 400 });
+
+  try {
+    const box = await prisma.box.findUnique({
+      where: { barcode: code },
+      include: {
+        items: {
+          select: {
+            id: true, name: true, category: true, location: true,
+            barcode: true, photoUrl: true, estimatedValue: true,
+          },
+          orderBy: { name: "asc" },
         },
-        orderBy: { name: "asc" },
       },
-    },
-  });
+    });
 
-  if (!box) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    if (!box) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  return NextResponse.json({
-    ...box,
-    count: box.items.length,
-    totalValue: box.items.reduce((sum, i) => sum + (i.estimatedValue || 0), 0),
-  });
+    return NextResponse.json({
+      ...box,
+      count: box.items.length,
+      totalValue: box.items.reduce((sum, i) => sum + (Number(i.estimatedValue) || 0), 0),
+    });
+  } catch {
+    return NextResponse.json({ error: "Failed to look up box barcode" }, { status: 500 });
+  }
 }

@@ -25,6 +25,9 @@ model Box {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
   items     Item[]
+
+  @@index([location])
+  @@index([createdAt])
 }
 
 model Item {
@@ -47,6 +50,12 @@ model Item {
   createdAt      DateTime       @default(now())
   updatedAt      DateTime       @updatedAt
   activityLogs   ActivityLog[]
+
+  @@index([category])
+  @@index([location])
+  @@index([boxId])
+  @@index([createdAt])
+  @@index([updatedAt])
 }
 
 model ActivityLog {
@@ -57,6 +66,9 @@ model ActivityLog {
   details   String   // human-readable description
   user      String   // username who performed action
   createdAt DateTime @default(now())
+
+  @@index([itemId])
+  @@index([createdAt])
 }
 
 model Tag {

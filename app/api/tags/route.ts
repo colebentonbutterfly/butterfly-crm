@@ -12,8 +12,12 @@ export async function GET() {
   const { error: authError } = await requireAuth();
   if (authError) return authError;
 
-  const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
-  return NextResponse.json(tags);
+  try {
+    const tags = await prisma.tag.findMany({ orderBy: { name: "asc" } });
+    return NextResponse.json(tags);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch tags" }, { status: 500 });
+  }
 }
 
 export async function POST(req: NextRequest) {
@@ -29,6 +33,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: parsed.error.issues[0]?.message || "Validation error" }, { status: 400 });
   }
 
-  const tag = await prisma.tag.create({ data: parsed.data });
-  return NextResponse.json(tag, { status: 201 });
+  try {
+    const tag = await prisma.tag.create({ data: parsed.data });
+    return NextResponse.json(tag, { status: 201 });
+  } catch {
+    return NextResponse.json({ error: "Failed to create tag (name may already exist)" }, { status: 409 });
+  }
 }

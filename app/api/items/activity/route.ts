@@ -14,16 +14,20 @@ export async function GET(req: NextRequest) {
   const where: Record<string, unknown> = {};
   if (itemId) where.itemId = itemId;
 
-  const [logs, total] = await Promise.all([
-    prisma.activityLog.findMany({
-      where,
-      orderBy: { createdAt: "desc" },
-      skip: (page - 1) * limit,
-      take: limit,
-      include: { item: { select: { name: true, barcode: true } } },
-    }),
-    prisma.activityLog.count({ where }),
-  ]);
+  try {
+    const [logs, total] = await Promise.all([
+      prisma.activityLog.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * limit,
+        take: limit,
+        include: { item: { select: { name: true, barcode: true } } },
+      }),
+      prisma.activityLog.count({ where }),
+    ]);
 
-  return NextResponse.json({ logs, total, page, totalPages: Math.ceil(total / limit) });
+    return NextResponse.json({ logs, total, page, totalPages: Math.ceil(total / limit) });
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch activity" }, { status: 500 });
+  }
 }

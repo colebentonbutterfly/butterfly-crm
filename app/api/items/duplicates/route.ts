@@ -11,14 +11,17 @@ export async function GET(req: NextRequest) {
     return NextResponse.json([]);
   }
 
-  // Search for similar items by name
-  const items = await prisma.item.findMany({
-    where: {
-      name: { contains: name },
-    },
-    select: { id: true, name: true, location: true, barcode: true },
-    take: 5,
-  });
+  try {
+    const items = await prisma.item.findMany({
+      where: {
+        name: { contains: name },
+      },
+      select: { id: true, name: true, location: true, barcode: true },
+      take: 5,
+    });
 
-  return NextResponse.json(items);
+    return NextResponse.json(items);
+  } catch {
+    return NextResponse.json({ error: "Failed to check duplicates" }, { status: 500 });
+  }
 }

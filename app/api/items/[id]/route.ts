@@ -8,9 +8,13 @@ export async function GET(_req: NextRequest, { params }: { params: { id: string 
   const { error: authError } = await requireAuth();
   if (authError) return authError;
 
-  const item = await prisma.item.findUnique({ where: { id: params.id } });
-  if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  return NextResponse.json(item);
+  try {
+    const item = await prisma.item.findUnique({ where: { id: params.id } });
+    if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
+    return NextResponse.json(item);
+  } catch {
+    return NextResponse.json({ error: "Failed to fetch item" }, { status: 500 });
+  }
 }
 
 export async function PUT(req: NextRequest, { params }: { params: { id: string } }) {
@@ -36,73 +40,85 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
 
   const data = parsed.data;
 
-  const item = await prisma.item.update({
-    where: { id: params.id },
-    data: {
-      name: data.name ?? existing.name,
-      description: data.description !== undefined ? data.description : existing.description,
-      category: data.category ?? existing.category,
-      location: data.location ?? existing.location,
-      condition: data.condition !== undefined ? data.condition : existing.condition,
-      quantity: data.quantity ?? existing.quantity,
-      barcode: data.barcode ?? existing.barcode,
-      photoUrl: data.photoUrl !== undefined ? data.photoUrl : existing.photoUrl,
-      photoUrls: data.photoUrls !== undefined ? JSON.stringify(data.photoUrls) : existing.photoUrls,
-      notes: data.notes !== undefined ? data.notes : existing.notes,
-      boxNumber: data.boxNumber !== undefined ? data.boxNumber : existing.boxNumber,
-      boxId: data.boxId !== undefined ? (data.boxId || null) : existing.boxId,
-      estimatedValue: data.estimatedValue !== undefined ? data.estimatedValue : existing.estimatedValue,
-      tags: data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
-    },
-  });
+  try {
+    const item = await prisma.$transaction(async (tx) => {
+      const updated = await tx.item.update({
+        where: { id: params.id },
+        data: {
+          name: data.name ?? existing.name,
+          description: data.description !== undefined ? data.description : existing.description,
+          category: data.category ?? existing.category,
+          location: data.location ?? existing.location,
+          condition: data.condition !== undefined ? data.condition : existing.condition,
+          quantity: data.quantity ?? existing.quantity,
+          barcode: data.barcode ?? existing.barcode,
+          photoUrl: data.photoUrl !== undefined ? data.photoUrl : existing.photoUrl,
+          photoUrls: data.photoUrls !== undefined ? JSON.stringify(data.photoUrls) : existing.photoUrls,
+          notes: data.notes !== undefined ? data.notes : existing.notes,
+          boxNumber: data.boxNumber !== undefined ? data.boxNumber : existing.boxNumber,
+          boxId: data.boxId !== undefined ? (data.boxId || null) : existing.boxId,
+          estimatedValue: data.estimatedValue !== undefined ? data.estimatedValue : existing.estimatedValue,
+          tags: data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
+        },
+      });
 
-  // Build change description
-  const changes: string[] = [];
-  if (data.location && data.location !== existing.location) {
-    changes.push(`Moved from ${existing.location} to ${data.location}`);
-  }
-  if (data.name && data.name !== existing.name) {
-    changes.push(`Renamed from "${existing.name}" to "${data.name}"`);
-  }
-  if (data.estimatedValue !== undefined && data.estimatedValue !== existing.estimatedValue) {
-    changes.push(`Value updated to $${data.estimatedValue ?? 0}`);
-  }
-  if (data.tags !== undefined) {
-    changes.push(`Tags updated`);
-  }
+      // Build change description
+      const changes: string[] = [];
+      if (data.location && data.location !== existing.location) {
+        changes.push(`Moved from ${existing.location} to ${data.location}`);
+      }
+      if (data.name && data.name !== existing.name) {
+        changes.push(`Renamed from "${existing.name}" to "${data.name}"`);
+      }
+      if (data.estimatedValue !== undefined && data.estimatedValue !== existing.estimatedValue) {
+        changes.push(`Value updated to $${data.estimatedValue ?? 0}`);
+      }
+      if (data.tags !== undefined) {
+        changes.push(`Tags updated`);
+      }
 
-  const action = data.location && data.location !== existing.location ? "moved" : "updated";
-  const details = changes.length > 0 ? changes.join("; ") : `Updated item "${item.name}"`;
+      const action = data.location && data.location !== existing.location ? "moved" : "updated";
+      const details = changes.length > 0 ? changes.join("; ") : `Updated item "${updated.name}"`;
 
-  await prisma.activityLog.create({
-    data: {
-      itemId: item.id,
-      action,
-      details,
-      user: getUsername(session),
-    },
-  });
+      await tx.activityLog.create({
+        data: {
+          itemId: updated.id,
+          action,
+          details,
+          user: getUsername(session),
+        },
+      });
 
-  return NextResponse.json(item);
+      return updated;
+    });
+
+    return NextResponse.json(item);
+  } catch {
+    return NextResponse.json({ error: "Failed to update item" }, { status: 500 });
+  }
 }
 
 export async function DELETE(_req: NextRequest, { params }: { params: { id: string } }) {
   const { error: authError, session } = await requireAuth();
   if (authError) return authError;
 
-  const existing = await prisma.item.findUnique({ where: { id: params.id } });
-  if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  try {
+    const existing = await prisma.item.findUnique({ where: { id: params.id } });
+    if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  // Log before deleting (cascade will remove logs too, but we want a record)
-  await prisma.activityLog.create({
-    data: {
-      itemId: existing.id,
-      action: "deleted",
-      details: `Deleted item "${existing.name}" from ${existing.location}`,
-      user: getUsername(session),
-    },
-  });
+    // Log before deleting (cascade will remove logs too, but we want a record)
+    await prisma.activityLog.create({
+      data: {
+        itemId: existing.id,
+        action: "deleted",
+        details: `Deleted item "${existing.name}" from ${existing.location}`,
+        user: getUsername(session),
+      },
+    });
 
-  await prisma.item.delete({ where: { id: params.id } });
-  return NextResponse.json({ success: true });
+    await prisma.item.delete({ where: { id: params.id } });
+    return NextResponse.json({ success: true });
+  } catch {
+    return NextResponse.json({ error: "Failed to delete item" }, { status: 500 });
+  }
 }

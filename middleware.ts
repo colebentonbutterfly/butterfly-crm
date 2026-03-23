@@ -7,6 +7,6 @@ export default withAuth({
 export const config = {
   matcher: [
     // Protect everything except login, api/auth, static files, and _next
-    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|icon-192.svg|manifest.json|sw.js|uploads/).*)",
+    "/((?!login|api/auth|_next/static|_next/image|favicon.ico|icon-.*|logo-.*|manifest.json|sw.js|uploads/).*)",
   ],
 };
