@@ -20,9 +20,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en">
       <head>
-        <link rel="apple-touch-icon" href="/icon-192.png" />
+        <link rel="apple-touch-icon" href="/icon-192.svg" />
+        <script dangerouslySetInnerHTML={{ __html: `
+          try {
+            const t = localStorage.getItem('theme');
+            if (t === 'dark' || (!t && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+              document.documentElement.classList.add('dark');
+            }
+          } catch(e) {}
+        `}} />
       </head>
-      <body className="bg-attic-50 text-gray-900 min-h-screen">
+      <body className="bg-attic-50 text-gray-900 min-h-screen dark:bg-gray-900 dark:text-gray-100">
         <Providers>
           <div className="flex min-h-screen">
             <Sidebar />

@@ -60,14 +60,14 @@ export default function PrintBarcodesPage() {
     <div className="space-y-6 mt-2">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Print Barcode Labels</h1>
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Print Barcode Labels</h1>
           <p className="text-gray-500 text-sm">Generate and print barcode stickers for items</p>
         </div>
       </div>
 
       {/* Settings */}
       <div className="card print:hidden space-y-4">
-        <h2 className="font-semibold text-gray-700">Label Settings</h2>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Label Settings</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1">Number of Labels</label>
@@ -104,7 +104,7 @@ export default function PrintBarcodesPage() {
           )}
         </div>
         {generated && (
-          <p className="text-sm text-gray-500">
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Tip: Print on Avery label sheets or plain paper and cut. Each barcode is unique and ready to stick on items.
           </p>
         )}
@@ -116,7 +116,7 @@ export default function PrintBarcodesPage() {
           {/* Print-only header */}
           <div className="hidden print:block text-center mb-4">
             <h2 className="text-lg font-bold">Deb&apos;s Attic - Barcode Labels</h2>
-            <p className="text-xs text-gray-500">Scan with the app to assign to items</p>
+            <p className="text-xs text-gray-500 dark:text-gray-400">Scan with the app to assign to items</p>
           </div>
 
           <div className="grid grid-cols-3 gap-0 print:gap-0" style={{ pageBreakInside: "avoid" }}>

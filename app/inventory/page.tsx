@@ -118,17 +118,17 @@ export default function InventoryPage() {
   return (
     <div className="space-y-4 mt-2">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Inventory</h1>
         <div className="flex items-center gap-2">
           <button
             onClick={() => setBatchMode(!batchMode)}
-            className={`text-sm px-3 py-2 rounded-lg border transition-colors ${batchMode ? "bg-attic-100 border-attic-300 text-attic-700" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}
+            className={`text-sm px-3 py-2 rounded-lg border transition-colors ${batchMode ? "bg-attic-100 dark:bg-attic-900 border-attic-300 text-attic-700 dark:text-attic-300" : "border-gray-300 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
           >
             {batchMode ? "Cancel" : "Batch"}
           </button>
           <button
             onClick={() => setViewMode("list")}
-            className={`p-2 rounded-lg ${viewMode === "list" ? "bg-attic-100 text-attic-700" : "text-gray-400 hover:text-gray-600"}`}
+            className={`p-2 rounded-lg ${viewMode === "list" ? "bg-attic-100 dark:bg-attic-900 text-attic-700 dark:text-attic-300" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
@@ -136,7 +136,7 @@ export default function InventoryPage() {
           </button>
           <button
             onClick={() => setViewMode("grid")}
-            className={`p-2 rounded-lg ${viewMode === "grid" ? "bg-attic-100 text-attic-700" : "text-gray-400 hover:text-gray-600"}`}
+            className={`p-2 rounded-lg ${viewMode === "grid" ? "bg-attic-100 dark:bg-attic-900 text-attic-700 dark:text-attic-300" : "text-gray-400 dark:text-gray-500 hover:text-gray-600 dark:hover:text-gray-300"}`}
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zm10 0a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
@@ -189,7 +189,7 @@ export default function InventoryPage() {
           <button onClick={selectAll} className="text-sm text-attic-700 hover:underline">
             {selected.size === items.length ? "Deselect All" : "Select All"}
           </button>
-          <span className="text-sm text-gray-500">{selected.size} selected</span>
+          <span className="text-sm text-gray-500 dark:text-gray-400">{selected.size} selected</span>
           <select value={batchLocation} onChange={(e) => setBatchLocation(e.target.value)} className="select-field w-auto">
             <option value="">Move to...</option>
             {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
@@ -202,9 +202,9 @@ export default function InventoryPage() {
 
       {/* Results count + pagination info */}
       <div className="flex items-center justify-between">
-        <p className="text-sm text-gray-500">{total} item{total !== 1 ? "s" : ""} found</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">{total} item{total !== 1 ? "s" : ""} found</p>
         {totalPages > 1 && (
-          <p className="text-sm text-gray-500">Page {page} of {totalPages}</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Page {page} of {totalPages}</p>
         )}
       </div>
 
@@ -219,14 +219,14 @@ export default function InventoryPage() {
           <svg className="w-16 h-16 text-attic-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
           </svg>
-          <p className="text-gray-400 text-lg mb-2">No items found</p>
-          <p className="text-gray-400 text-sm mb-4">Try adjusting your search or filters</p>
+          <p className="text-gray-400 dark:text-gray-500 text-lg mb-2">No items found</p>
+          <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">Try adjusting your search or filters</p>
           <Link href="/items/new" className="btn-primary">Add First Item</Link>
         </div>
       ) : viewMode === "list" ? (
         <div className="space-y-2">
           {/* Sort headers */}
-          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-medium text-gray-500 uppercase tracking-wide">
+          <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             {batchMode && <div className="col-span-1" />}
             <div className={`${batchMode ? "col-span-4" : "col-span-5"} cursor-pointer hover:text-gray-700`} onClick={() => toggleSort("name")}>
               Name {sortBy === "name" && (sortOrder === "asc" ? "↑" : "↓")}
@@ -263,15 +263,15 @@ export default function InventoryPage() {
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-gray-900 truncate">{item.name}</h3>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</h3>
                       <LocationBadge location={item.location} />
                     </div>
-                    <p className="text-sm text-gray-500 mt-0.5">{item.category}{item.boxNumber ? ` · ${item.boxNumber}` : ""}</p>
-                    <p className="text-xs text-gray-400 font-mono mt-0.5">{item.barcode}</p>
+                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{item.category}{item.boxNumber ? ` · ${item.boxNumber}` : ""}</p>
+                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{item.barcode}</p>
                   </div>
                   <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-sm text-gray-500">Qty: {item.quantity}</p>
-                    {item.condition && <p className="text-xs text-gray-400">{item.condition}</p>}
+                    <p className="text-sm text-gray-500 dark:text-gray-400">Qty: {item.quantity}</p>
+                    {item.condition && <p className="text-xs text-gray-400 dark:text-gray-500">{item.condition}</p>}
                   </div>
                 </Link>
               </div>
@@ -300,8 +300,8 @@ export default function InventoryPage() {
                     </svg>
                   </div>
                 )}
-                <h3 className="font-medium text-gray-900 text-sm truncate">{item.name}</h3>
-                <p className="text-xs text-gray-500 mt-0.5">{item.category}</p>
+                <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{item.name}</h3>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.category}</p>
                 <div className="mt-1.5">
                   <LocationBadge location={item.location} />
                 </div>
@@ -332,7 +332,7 @@ export default function InventoryPage() {
                 key={pageNum}
                 onClick={() => setPage(pageNum)}
                 className={`w-9 h-9 rounded-lg text-sm font-medium transition-colors ${
-                  page === pageNum ? "bg-attic-600 text-white" : "text-gray-600 hover:bg-gray-100"
+                  page === pageNum ? "bg-attic-600 text-white" : "text-gray-600 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700"
                 }`}
               >
                 {pageNum}
@@ -351,8 +351,8 @@ export default function InventoryPage() {
 
       {/* Keyboard shortcut hint */}
       <div className="text-center pb-4">
-        <p className="text-xs text-gray-400">
-          Press <kbd className="bg-gray-100 px-1.5 py-0.5 rounded text-gray-500">Ctrl+K</kbd> for quick search
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Press <kbd className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400">Ctrl+K</kbd> for quick search
         </p>
       </div>
     </div>

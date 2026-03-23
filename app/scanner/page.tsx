@@ -110,11 +110,11 @@ export default function ScannerPage() {
 
   return (
     <div className="space-y-6 mt-2">
-      <h1 className="text-2xl font-bold text-gray-900">Scan Barcode</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Scan Barcode</h1>
 
       {/* Camera scanner */}
       <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">Camera Scanner</h2>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Camera Scanner</h2>
         {scanning ? (
           <div className="space-y-3">
             <div className="relative bg-black rounded-lg overflow-hidden">
@@ -128,7 +128,7 @@ export default function ScannerPage() {
                 </span>
               </div>
             </div>
-            <p className="text-sm text-gray-500">Point camera at a DA-format barcode. Works best in Chrome/Edge.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Point camera at a DA-format barcode. Works best in Chrome/Edge.</p>
             <button onClick={stopCamera} className="btn-secondary">Stop Scanner</button>
           </div>
         ) : (
@@ -144,7 +144,7 @@ export default function ScannerPage() {
 
       {/* Manual entry */}
       <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">Manual Entry</h2>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Manual Entry</h2>
         <form onSubmit={handleManualSubmit} className="flex gap-2">
           <input
             type="text"
@@ -155,7 +155,7 @@ export default function ScannerPage() {
           />
           <button type="submit" className="btn-primary shrink-0">Look Up</button>
         </form>
-        <p className="text-xs text-gray-400">Only DA-format barcodes are accepted (DA-YYYYMMDD-XXXXX)</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">Only DA-format barcodes are accepted (DA-YYYYMMDD-XXXXX)</p>
       </div>
 
       {error && (

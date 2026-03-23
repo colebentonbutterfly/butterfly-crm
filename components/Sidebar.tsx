@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
@@ -70,7 +71,10 @@ export default function Sidebar() {
           })}
         </nav>
         <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-attic-700">
-          <p className="text-attic-400 text-xs text-center">2 Pods → 1 Shipping Container</p>
+          <div className="flex items-center justify-between">
+            <p className="text-attic-400 text-xs">2 Pods → 1 Container</p>
+            <ThemeToggle />
+          </div>
         </div>
       </aside>
 

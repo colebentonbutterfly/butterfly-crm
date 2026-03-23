@@ -104,13 +104,13 @@ export default function PriceLookupPage() {
   return (
     <div className="space-y-6 mt-2">
       <div>
-        <h1 className="text-2xl font-bold text-gray-900">Price Lookup</h1>
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Price Lookup</h1>
         <p className="text-gray-500 text-sm">Scan a manufacturer barcode (UPC/EAN) to check prices on eBay, Amazon, and Google</p>
       </div>
 
       {/* Camera scanner */}
       <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">Scan Manufacturer Barcode</h2>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Scan Manufacturer Barcode</h2>
         {scanning ? (
           <div className="space-y-3">
             <div className="relative bg-black rounded-lg overflow-hidden">
@@ -139,8 +139,8 @@ export default function PriceLookupPage() {
 
       {/* Manual entry */}
       <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">Manual Entry</h2>
-        <p className="text-xs text-gray-500">Enter a UPC/EAN barcode number or product name</p>
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Manual Entry</h2>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Enter a UPC/EAN barcode number or product name</p>
         <form onSubmit={handleSubmit} className="flex gap-2">
           <input
             type="text"
@@ -156,8 +156,8 @@ export default function PriceLookupPage() {
       {/* Results */}
       {result && (
         <div className="card space-y-4">
-          <h2 className="font-semibold text-gray-700">Price Search Results</h2>
-          <p className="text-sm text-gray-500">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-200">Price Search Results</h2>
+          <p className="text-sm text-gray-500 dark:text-gray-400">
             Barcode / Query: <span className="font-mono font-medium">{result.barcode}</span>
           </p>
 
@@ -172,8 +172,8 @@ export default function PriceLookupPage() {
                 <span className="text-lg font-bold text-blue-600">G</span>
               </div>
               <div>
-                <p className="font-medium text-gray-800">Google</p>
-                <p className="text-xs text-gray-500">Search for pricing</p>
+                <p className="font-medium text-gray-800 dark:text-gray-100">Google</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Search for pricing</p>
               </div>
             </a>
 
@@ -187,8 +187,8 @@ export default function PriceLookupPage() {
                 <span className="text-lg font-bold text-red-600">e</span>
               </div>
               <div>
-                <p className="font-medium text-gray-800">eBay</p>
-                <p className="text-xs text-gray-500">Check listings & sold prices</p>
+                <p className="font-medium text-gray-800 dark:text-gray-100">eBay</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Check listings & sold prices</p>
               </div>
             </a>
 
@@ -202,13 +202,13 @@ export default function PriceLookupPage() {
                 <span className="text-lg font-bold text-yellow-700">A</span>
               </div>
               <div>
-                <p className="font-medium text-gray-800">Amazon</p>
-                <p className="text-xs text-gray-500">Check retail price</p>
+                <p className="font-medium text-gray-800 dark:text-gray-100">Amazon</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Check retail price</p>
               </div>
             </a>
           </div>
 
-          <p className="text-xs text-gray-400">
+          <p className="text-xs text-gray-400 dark:text-gray-500">
             Tip: On eBay, use the &quot;Sold Items&quot; filter to see what similar items actually sold for.
           </p>
         </div>

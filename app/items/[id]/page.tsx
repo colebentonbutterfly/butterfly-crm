@@ -116,7 +116,7 @@ export default function ItemDetailPage() {
         <svg className="w-16 h-16 text-gray-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M12 2a10 10 0 110 20 10 10 0 010-20z" />
         </svg>
-        <p className="text-gray-400 text-lg">Item not found</p>
+        <p className="text-gray-400 dark:text-gray-500 text-lg">Item not found</p>
         <Link href="/inventory" className="btn-primary mt-4 inline-flex">Back to Inventory</Link>
       </div>
     );
@@ -127,10 +127,10 @@ export default function ItemDetailPage() {
       {/* Screen version */}
       <div className="space-y-6 mt-2 print:hidden">
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-sm text-gray-500">
+          <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Link href="/inventory" className="hover:text-attic-600">Inventory</Link>
             <span>/</span>
-            <span className="text-gray-700">{item.name}</span>
+            <span className="text-gray-700 dark:text-gray-200">{item.name}</span>
           </div>
           <div className="flex items-center gap-2">
             <button onClick={handlePrintLabel} className="btn-secondary text-sm" title="Print barcode label">
@@ -171,7 +171,7 @@ export default function ItemDetailPage() {
                 )}
               </div>
             ) : (
-              <div className="w-full aspect-square bg-attic-100 rounded-xl flex items-center justify-center">
+              <div className="w-full aspect-square bg-attic-100 dark:bg-attic-900 rounded-xl flex items-center justify-center">
                 <svg className="w-20 h-20 text-attic-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                 </svg>
@@ -190,47 +190,47 @@ export default function ItemDetailPage() {
             <div className="card">
               <div className="flex items-start justify-between">
                 <div>
-                  <h1 className="text-2xl font-bold text-gray-900">{item.name}</h1>
+                  <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.name}</h1>
                   <div className="flex items-center gap-2 mt-2">
                     <LocationBadge location={item.location} />
-                    {item.condition && <span className="badge bg-gray-100 text-gray-600">{item.condition}</span>}
+                    {item.condition && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{item.condition}</span>}
                   </div>
                 </div>
               </div>
 
               {item.description && (
-                <p className="text-gray-600 mt-3">{item.description}</p>
+                <p className="text-gray-600 dark:text-gray-300 mt-3">{item.description}</p>
               )}
 
               <div className="grid grid-cols-2 gap-4 mt-4 text-sm">
                 <div>
-                  <p className="text-gray-500">Category</p>
+                  <p className="text-gray-500 dark:text-gray-400">Category</p>
                   <p className="font-medium">{item.category}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Quantity</p>
+                  <p className="text-gray-500 dark:text-gray-400">Quantity</p>
                   <p className="font-medium">{item.quantity}</p>
                 </div>
                 {item.boxNumber && (
                   <div>
-                    <p className="text-gray-500">Box / Group</p>
+                    <p className="text-gray-500 dark:text-gray-400">Box / Group</p>
                     <Link href={`/boxes?box=${encodeURIComponent(item.boxNumber)}`} className="font-medium text-attic-600 hover:underline">{item.boxNumber}</Link>
                   </div>
                 )}
                 <div>
-                  <p className="text-gray-500">Barcode</p>
+                  <p className="text-gray-500 dark:text-gray-400">Barcode</p>
                   <p className="font-medium font-mono text-xs">{item.barcode}</p>
                 </div>
               </div>
 
               {item.notes && (
-                <div className="mt-4 pt-4 border-t border-gray-100">
-                  <p className="text-gray-500 text-sm">Notes</p>
-                  <p className="text-gray-700 mt-1 whitespace-pre-wrap">{item.notes}</p>
+                <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700">
+                  <p className="text-gray-500 dark:text-gray-400 text-sm">Notes</p>
+                  <p className="text-gray-700 dark:text-gray-200 mt-1 whitespace-pre-wrap">{item.notes}</p>
                 </div>
               )}
 
-              <div className="mt-4 pt-4 border-t border-gray-100 text-xs text-gray-400">
+              <div className="mt-4 pt-4 border-t border-gray-100 dark:border-gray-700 text-xs text-gray-400 dark:text-gray-500">
                 <p>Added: {new Date(item.createdAt).toLocaleDateString()}</p>
                 <p>Updated: {new Date(item.updatedAt).toLocaleDateString()}</p>
               </div>
@@ -238,7 +238,7 @@ export default function ItemDetailPage() {
 
             {/* Quick move buttons */}
             <div className="card">
-              <h3 className="font-semibold text-gray-700 mb-3">Quick Transfer</h3>
+              <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Quick Transfer</h3>
               <div className="flex flex-wrap gap-2">
                 {["Pod 1", "Pod 2", "Shipping Container", "Donated", "Trash"].map((loc) => (
                   <button
@@ -247,8 +247,8 @@ export default function ItemDetailPage() {
                     disabled={item.location === loc}
                     className={`text-sm px-3 py-1.5 rounded-lg border transition-colors ${
                       item.location === loc
-                        ? "bg-attic-100 border-attic-300 text-attic-700 font-medium cursor-default"
-                        : "border-gray-200 text-gray-600 hover:bg-gray-50"
+                        ? "bg-attic-100 dark:bg-attic-900 border-attic-300 text-attic-700 dark:text-attic-300 font-medium cursor-default"
+                        : "border-gray-200 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"
                     }`}
                   >
                     {loc}
@@ -295,15 +295,15 @@ export default function ItemDetailPage() {
               <td className="py-2">{item.quantity}</td>
             </tr>
             <tr className="border-b">
-              <td className="py-2 font-medium text-gray-600">Location</td>
+              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Location</td>
               <td className="py-2">{item.location}</td>
-              <td className="py-2 font-medium text-gray-600">Box / Group</td>
+              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Box / Group</td>
               <td className="py-2">{item.boxNumber || "N/A"}</td>
             </tr>
             <tr className="border-b">
-              <td className="py-2 font-medium text-gray-600">Barcode</td>
+              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Barcode</td>
               <td className="py-2 font-mono">{item.barcode}</td>
-              <td className="py-2 font-medium text-gray-600">Added</td>
+              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Added</td>
               <td className="py-2">{new Date(item.createdAt).toLocaleDateString()}</td>
             </tr>
           </tbody>
