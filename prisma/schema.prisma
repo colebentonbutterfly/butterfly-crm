@@ -1,0 +1,24 @@
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Item {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  location    String   // "Pod 1", "Pod 2", "Shipping Container", "Donated", "Trash"
+  condition   String?  // "Good", "Fair", "Poor", "New"
+  quantity    Int      @default(1)
+  barcode     String   @unique
+  photoUrl    String?
+  notes       String?
+  boxNumber   String?  // which box/group it's in
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
