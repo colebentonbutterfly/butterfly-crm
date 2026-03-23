@@ -3,37 +3,64 @@
 import { useState, useRef, useEffect } from "react";
 import { useToast } from "@/components/Toast";
 
-interface LookupResult {
-  barcode: string;
-  searchLinks: {
-    google: string;
-    ebay: string;
-    amazon: string;
-  };
+interface EbayItem {
+  title: string;
+  price: { value: string; currency: string };
+  condition: string;
+  image: string | null;
+  url: string;
+  seller: string | null;
+}
+
+interface EbayResult {
+  configured: boolean;
+  query: string;
+  priceStats: {
+    low: number;
+    high: number;
+    average: number;
+    count: number;
+    currency: string;
+  } | null;
+  items: EbayItem[];
+  total: number;
 }
 
 export default function PriceLookupPage() {
   const { toast } = useToast();
   const [barcode, setBarcode] = useState("");
-  const [result, setResult] = useState<LookupResult | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [ebayResult, setEbayResult] = useState<EbayResult | null>(null);
+  const [ebayConfigured, setEbayConfigured] = useState<boolean | null>(null);
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
-  function lookup(code: string) {
+  async function lookup(code: string) {
     const trimmed = code.trim();
     if (!trimmed) return;
 
-    // Generate search links for the manufacturer barcode / product name
-    setResult({
-      barcode: trimmed,
-      searchLinks: {
-        google: `https://www.google.com/search?q=${encodeURIComponent(trimmed)}+price`,
-        ebay: `https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(trimmed)}`,
-        amazon: `https://www.amazon.com/s?k=${encodeURIComponent(trimmed)}`,
-      },
-    });
-    toast("Search links generated");
+    setLoading(true);
+    setEbayResult(null);
+
+    try {
+      const res = await fetch(`/api/price-lookup?q=${encodeURIComponent(trimmed)}`);
+      const data = await res.json();
+
+      if (res.status === 503) {
+        setEbayConfigured(false);
+      } else if (res.ok) {
+        setEbayConfigured(true);
+        setEbayResult(data);
+        toast(`Found ${data.total} eBay listings`);
+      } else {
+        toast("eBay lookup failed", "error");
+      }
+    } catch {
+      toast("Lookup failed", "error");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -79,7 +106,6 @@ export default function PriceLookupPage() {
         const barcodes = await detector.detect(videoRef.current);
         if (barcodes.length > 0 && active) {
           const value = barcodes[0].rawValue;
-          // Skip our DA-format barcodes — this is for manufacturer barcodes
           if (!value.startsWith("DA-")) {
             stopCamera();
             setBarcode(value);
@@ -101,11 +127,15 @@ export default function PriceLookupPage() {
     return () => stopCamera();
   }, []);
 
+  const amazonLink = barcode.trim()
+    ? `https://www.amazon.com/s?k=${encodeURIComponent(barcode.trim())}`
+    : null;
+
   return (
     <div className="space-y-6 mt-2">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Price Lookup</h1>
-        <p className="text-gray-500 dark:text-gray-400 text-sm">Scan a manufacturer barcode (UPC/EAN) to check prices on eBay, Amazon, and Google</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Scan a manufacturer barcode (UPC/EAN) to check eBay prices and search Amazon</p>
       </div>
 
       {/* Camera scanner */}
@@ -149,57 +179,58 @@ export default function PriceLookupPage() {
             placeholder="Enter UPC, EAN, or product name..."
             className="input-field flex-1"
           />
-          <button type="submit" className="btn-primary shrink-0">Look Up</button>
+          <button type="submit" disabled={loading} className="btn-primary shrink-0">
+            {loading ? "Searching..." : "Look Up"}
+          </button>
         </form>
       </div>
 
-      {/* Results */}
-      {result && (
+      {/* Loading */}
+      {loading && (
+        <div className="card animate-pulse space-y-3">
+          <div className="h-6 bg-gray-200 dark:bg-gray-700 rounded w-48" />
+          <div className="grid grid-cols-3 gap-3">
+            <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
+            <div className="h-16 bg-gray-200 dark:bg-gray-700 rounded" />
+          </div>
+        </div>
+      )}
+
+      {/* eBay not configured - show fallback links */}
+      {ebayConfigured === false && barcode.trim() && (
         <div className="card space-y-4">
-          <h2 className="font-semibold text-gray-700 dark:text-gray-200">Price Search Results</h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
-            Barcode / Query: <span className="font-mono font-medium">{result.barcode}</span>
-          </p>
+          <div className="bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg px-4 py-3">
+            <p className="text-sm text-yellow-800 dark:text-yellow-200">
+              eBay API is not configured yet. Add <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">EBAY_APP_ID</code> and <code className="bg-yellow-100 dark:bg-yellow-900 px-1 rounded">EBAY_CERT_ID</code> to your .env file.
+            </p>
+          </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <h2 className="font-semibold text-gray-700 dark:text-gray-200">Search Manually</h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <a
-              href={result.searchLinks.google}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
-            >
-              <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-blue-600">G</span>
-              </div>
-              <div>
-                <p className="font-medium text-gray-800 dark:text-gray-100">Google</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Search for pricing</p>
-              </div>
-            </a>
-
-            <a
-              href={result.searchLinks.ebay}
+              href={`https://www.ebay.com/sch/i.html?_nkw=${encodeURIComponent(barcode.trim())}`}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-red-300 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
             >
-              <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-red-600">e</span>
+              <div className="w-10 h-10 bg-red-100 dark:bg-red-900 rounded-full flex items-center justify-center">
+                <span className="text-lg font-bold text-red-600 dark:text-red-300">e</span>
               </div>
               <div>
                 <p className="font-medium text-gray-800 dark:text-gray-100">eBay</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400">Check listings & sold prices</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Search listings manually</p>
               </div>
             </a>
 
             <a
-              href={result.searchLinks.amazon}
+              href={amazonLink!}
               target="_blank"
               rel="noopener noreferrer"
               className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors"
             >
-              <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
-                <span className="text-lg font-bold text-yellow-700">A</span>
+              <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                <span className="text-lg font-bold text-yellow-700 dark:text-yellow-300">A</span>
               </div>
               <div>
                 <p className="font-medium text-gray-800 dark:text-gray-100">Amazon</p>
@@ -207,9 +238,103 @@ export default function PriceLookupPage() {
               </div>
             </a>
           </div>
+        </div>
+      )}
 
-          <p className="text-xs text-gray-400 dark:text-gray-500">
-            Tip: On eBay, use the &quot;Sold Items&quot; filter to see what similar items actually sold for.
+      {/* eBay results */}
+      {ebayResult && (
+        <div className="space-y-4">
+          {/* Price summary */}
+          {ebayResult.priceStats && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">eBay Price Summary</h2>
+              <div className="grid grid-cols-3 gap-4 text-center">
+                <div>
+                  <p className="text-2xl font-bold text-green-600">${ebayResult.priceStats.low.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Lowest</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-attic-600 dark:text-attic-400">${ebayResult.priceStats.average.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Average</p>
+                </div>
+                <div>
+                  <p className="text-2xl font-bold text-red-600">${ebayResult.priceStats.high.toFixed(2)}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Highest</p>
+                </div>
+              </div>
+              <p className="text-xs text-gray-400 dark:text-gray-500 mt-2 text-center">
+                Based on {ebayResult.priceStats.count} active listing{ebayResult.priceStats.count !== 1 ? "s" : ""} ({ebayResult.total} total found)
+              </p>
+            </div>
+          )}
+
+          {/* Listings */}
+          {ebayResult.items.length > 0 && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">eBay Listings</h2>
+              <div className="space-y-3">
+                {ebayResult.items.map((item, i) => (
+                  <a
+                    key={i}
+                    href={item.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                  >
+                    {item.image ? (
+                      <img src={item.image} alt="" className="w-16 h-16 object-cover rounded shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 bg-gray-100 dark:bg-gray-700 rounded flex items-center justify-center shrink-0">
+                        <span className="text-gray-400 text-xs">No img</span>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100 truncate">{item.title}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {item.condition}{item.seller ? ` · ${item.seller}` : ""}
+                      </p>
+                    </div>
+                    <p className="text-lg font-bold text-attic-700 dark:text-attic-300 shrink-0">
+                      ${parseFloat(item.price.value).toFixed(2)}
+                    </p>
+                  </a>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {ebayResult.items.length === 0 && (
+            <div className="card text-center py-8">
+              <p className="text-gray-400 dark:text-gray-500">No eBay listings found for this item</p>
+            </div>
+          )}
+
+          {/* Amazon link */}
+          {amazonLink && (
+            <div className="card">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Also Check</h2>
+              <a
+                href={amazonLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors"
+              >
+                <div className="w-10 h-10 bg-yellow-100 dark:bg-yellow-900 rounded-full flex items-center justify-center">
+                  <span className="text-lg font-bold text-yellow-700 dark:text-yellow-300">A</span>
+                </div>
+                <div>
+                  <p className="font-medium text-gray-800 dark:text-gray-100">Amazon</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">Check retail price on Amazon</p>
+                </div>
+                <svg className="w-5 h-5 text-gray-400 ml-auto" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                </svg>
+              </a>
+            </div>
+          )}
+
+          <p className="text-xs text-gray-400 dark:text-gray-500 text-center">
+            Tip: On eBay, check &quot;Sold Items&quot; to see what similar items actually sold for.
           </p>
         </div>
       )}
