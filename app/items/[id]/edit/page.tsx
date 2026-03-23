@@ -7,7 +7,8 @@ import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function EditItemPage() {
   const params = useParams();
-  const [item, setItem] = useState(null);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const [item, setItem] = useState<any>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -21,6 +22,8 @@ export default function EditItemPage() {
         photoUrls: data.photoUrls ? JSON.parse(data.photoUrls) : [],
         notes: data.notes || "",
         boxNumber: data.boxNumber || "",
+        estimatedValue: data.estimatedValue ?? null,
+        tags: data.tags ? JSON.parse(data.tags) : [],
       }))
       .finally(() => setLoading(false));
   }, [params.id]);
@@ -30,7 +33,7 @@ export default function EditItemPage() {
 
   return (
     <div className="space-y-4 mt-2">
-      <h1 className="text-2xl font-bold text-gray-900">Edit Item</h1>
+      <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Edit Item</h1>
       <ItemForm item={item} isEdit />
     </div>
   );

@@ -1,9 +1,15 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, LOCATIONS, CONDITIONS } from "@/lib/categories";
 import { useToast } from "@/components/Toast";
+
+interface TagOption {
+  id: string;
+  name: string;
+  color: string;
+}
 
 interface ItemData {
   id?: string;
@@ -18,6 +24,8 @@ interface ItemData {
   photoUrls: string[];
   notes: string;
   boxNumber: string;
+  estimatedValue: number | null;
+  tags: string[];
 }
 
 export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: boolean }) {
@@ -26,6 +34,8 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const [duplicates, setDuplicates] = useState<{ id: string; name: string; location: string }[]>([]);
   const [form, setForm] = useState<ItemData>({
     name: item?.name || "",
     description: item?.description || "",
@@ -38,15 +48,37 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     photoUrls: item?.photoUrls || [],
     notes: item?.notes || "",
     boxNumber: item?.boxNumber || "",
+    estimatedValue: item?.estimatedValue ?? null,
+    tags: item?.tags || [],
   });
 
-  const set = (field: keyof ItemData, value: string | number | string[]) =>
+  const set = (field: keyof ItemData, value: string | number | string[] | null) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
   const allPhotos = [
     ...(form.photoUrl ? [form.photoUrl] : []),
     ...form.photoUrls,
   ];
+
+  // Load available tags
+  useEffect(() => {
+    fetch("/api/tags").then((r) => r.json()).then(setAvailableTags).catch(() => {});
+  }, []);
+
+  // Duplicate detection (debounced)
+  useEffect(() => {
+    if (isEdit || !form.name || form.name.length < 3) {
+      setDuplicates([]);
+      return;
+    }
+    const timer = setTimeout(() => {
+      fetch(`/api/items/duplicates?name=${encodeURIComponent(form.name)}`)
+        .then((r) => r.json())
+        .then((items) => setDuplicates(items))
+        .catch(() => {});
+    }, 500);
+    return () => clearTimeout(timer);
+  }, [form.name, isEdit]);
 
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
     const files = e.target.files;
@@ -55,10 +87,19 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     setUploading(true);
     try {
       for (const file of Array.from(files)) {
+        // Client-side size check
+        if (file.size > 10 * 1024 * 1024) {
+          toast("File too large (max 10MB)", "error");
+          continue;
+        }
         const fd = new FormData();
         fd.append("file", file);
         const res = await fetch("/api/upload", { method: "POST", body: fd });
         const data = await res.json();
+        if (!res.ok) {
+          toast(data.error || "Upload failed", "error");
+          continue;
+        }
         if (data.url) {
           if (!form.photoUrl) {
             set("photoUrl", data.url);
@@ -86,6 +127,14 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     }
   }
 
+  function toggleTag(tagName: string) {
+    if (form.tags.includes(tagName)) {
+      set("tags", form.tags.filter((t) => t !== tagName));
+    } else {
+      set("tags", [...form.tags, tagName]);
+    }
+  }
+
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.name.trim()) { toast("Please enter an item name.", "error"); return; }
@@ -98,16 +147,22 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
       const res = await fetch(url, {
         method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
+        body: JSON.stringify({
+          ...form,
+          estimatedValue: form.estimatedValue || null,
+        }),
       });
 
-      if (!res.ok) throw new Error("Save failed");
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || "Save failed");
+      }
 
       const saved = await res.json();
       toast(isEdit ? "Item updated!" : "Item added!");
       router.push(`/items/${saved.id}`);
-    } catch {
-      toast("Failed to save item. Please try again.", "error");
+    } catch (err) {
+      toast(err instanceof Error ? err.message : "Failed to save item.", "error");
     } finally {
       setSaving(false);
     }
@@ -128,7 +183,19 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
               className="input-field"
               placeholder="e.g., Cast Iron Skillet"
               required
+              maxLength={255}
             />
+            {/* Duplicate warning */}
+            {duplicates.length > 0 && (
+              <div className="mt-2 p-2 bg-yellow-50 dark:bg-yellow-900/30 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                <p className="text-xs font-medium text-yellow-700 dark:text-yellow-300">Similar items found:</p>
+                {duplicates.map((d) => (
+                  <p key={d.id} className="text-xs text-yellow-600 dark:text-yellow-400 mt-0.5">
+                    &bull; {d.name} ({d.location})
+                  </p>
+                ))}
+              </div>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Category</label>
@@ -139,17 +206,18 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Description</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Description</label>
           <textarea
             value={form.description}
             onChange={(e) => set("description", e.target.value)}
             className="input-field"
             rows={2}
             placeholder="Brief description of the item..."
+            maxLength={5000}
           />
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Location</label>
             <select value={form.location} onChange={(e) => set("location", e.target.value)} className="select-field">
@@ -167,9 +235,22 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
             <input
               type="number"
               min={1}
+              max={99999}
               value={form.quantity}
               onChange={(e) => set("quantity", parseInt(e.target.value) || 1)}
               className="input-field"
+            />
+          </div>
+          <div>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Est. Value ($)</label>
+            <input
+              type="number"
+              min={0}
+              step={0.01}
+              value={form.estimatedValue ?? ""}
+              onChange={(e) => set("estimatedValue", e.target.value ? parseFloat(e.target.value) : null)}
+              className="input-field"
+              placeholder="0.00"
             />
           </div>
         </div>
@@ -183,6 +264,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
               onChange={(e) => set("boxNumber", e.target.value)}
               className="input-field"
               placeholder="e.g., Box 12, Pallet A"
+              maxLength={100}
             />
           </div>
           <div>
@@ -193,26 +275,53 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
               onChange={(e) => set("barcode", e.target.value)}
               className="input-field"
               placeholder="Auto-generated if left blank"
+              maxLength={100}
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">Notes</label>
+          <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Notes</label>
           <textarea
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             className="input-field"
             rows={3}
             placeholder="Any additional notes about the item, its history, value, etc..."
+            maxLength={10000}
           />
+        </div>
+      </div>
+
+      {/* Tags */}
+      <div className="card space-y-4">
+        <h2 className="font-semibold text-gray-700 dark:text-gray-200">Tags</h2>
+        <div className="flex flex-wrap gap-2">
+          {availableTags.map((tag) => (
+            <button
+              key={tag.id}
+              type="button"
+              onClick={() => toggleTag(tag.name)}
+              className={`px-3 py-1 rounded-full text-xs font-medium transition-all border ${
+                form.tags.includes(tag.name)
+                  ? "text-white border-transparent"
+                  : "bg-white dark:bg-gray-700 border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300"
+              }`}
+              style={form.tags.includes(tag.name) ? { backgroundColor: tag.color } : {}}
+            >
+              {tag.name}
+            </button>
+          ))}
+          {availableTags.length === 0 && (
+            <p className="text-xs text-gray-400">Loading tags...</p>
+          )}
         </div>
       </div>
 
       {/* Photo upload */}
       <div className="card space-y-4">
         <h2 className="font-semibold text-gray-700 dark:text-gray-200">Photos</h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Add multiple photos to document the item from different angles</p>
+        <p className="text-xs text-gray-500 dark:text-gray-400">Add multiple photos to document the item from different angles (max 10MB each, JPEG/PNG/WebP/GIF)</p>
 
         {allPhotos.length > 0 && (
           <div className="flex flex-wrap gap-3">
@@ -235,7 +344,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
           <input
             ref={fileRef}
             type="file"
-            accept="image/*"
+            accept="image/jpeg,image/png,image/webp,image/gif"
             capture="environment"
             multiple
             onChange={handlePhotoUpload}
@@ -262,7 +371,6 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
               </>
             )}
           </button>
-          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tap to use camera or select from gallery. You can add multiple photos.</p>
         </div>
       </div>
 

@@ -1,6 +1,7 @@
 "use client";
 
 import { ReactNode, useState, useEffect } from "react";
+import { SessionProvider } from "next-auth/react";
 import { ToastProvider } from "./Toast";
 import SearchModal from "./SearchModal";
 
@@ -18,7 +19,6 @@ export default function Providers({ children }: { children: ReactNode }) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, []);
 
-  // Register service worker for PWA
   useEffect(() => {
     if ("serviceWorker" in navigator) {
       navigator.serviceWorker.register("/sw.js").catch(() => {});
@@ -26,9 +26,11 @@ export default function Providers({ children }: { children: ReactNode }) {
   }, []);
 
   return (
-    <ToastProvider>
-      {children}
-      <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
-    </ToastProvider>
+    <SessionProvider>
+      <ToastProvider>
+        {children}
+        <SearchModal open={searchOpen} onClose={() => setSearchOpen(false)} />
+      </ToastProvider>
+    </SessionProvider>
   );
 }

@@ -1,20 +1,43 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, getUsername } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { batchTransferSchema } from "@/lib/validation";
 
 export async function PUT(req: NextRequest) {
-  const body = await req.json();
-  const { ids, location } = body;
+  const { error: authError, session } = await requireAuth();
+  if (authError) return authError;
 
-  if (!ids || !Array.isArray(ids) || ids.length === 0) {
-    return NextResponse.json({ error: "No items selected" }, { status: 400 });
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  if (!rateLimit(`batch-${ip}`, 10, 60000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
-  if (!location) {
-    return NextResponse.json({ error: "Location is required" }, { status: 400 });
+
+  const body = await req.json();
+  const parsed = batchTransferSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
   }
+
+  const { ids, location } = parsed.data;
+
+  // Get items before update for logging
+  const items = await prisma.item.findMany({ where: { id: { in: ids } } });
 
   const result = await prisma.item.updateMany({
     where: { id: { in: ids } },
     data: { location },
+  });
+
+  // Log each move
+  const username = getUsername(session);
+  await prisma.activityLog.createMany({
+    data: items.map((item) => ({
+      itemId: item.id,
+      action: "moved",
+      details: `Batch moved from ${item.location} to ${location}`,
+      user: username,
+    })),
   });
 
   return NextResponse.json({ updated: result.count });

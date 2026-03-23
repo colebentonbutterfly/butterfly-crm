@@ -7,19 +7,46 @@ generator client {
   provider = "prisma-client-js"
 }
 
+model User {
+  id             String   @id @default(cuid())
+  username       String   @unique
+  hashedPassword String
+  name           String
+  createdAt      DateTime @default(now())
+}
+
 model Item {
-  id          String   @id @default(cuid())
-  name        String
-  description String?
-  category    String
-  location    String   // "Pod 1", "Pod 2", "Shipping Container", "Donated", "Trash"
-  condition   String?  // "Good", "Fair", "Poor", "New"
-  quantity    Int      @default(1)
-  barcode     String   @unique
-  photoUrl    String?
-  photoUrls   String?  // JSON array of additional photo URLs
-  notes       String?
-  boxNumber   String?  // which box/group it's in
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id             String         @id @default(cuid())
+  name           String
+  description    String?
+  category       String
+  location       String         // "Pod 1", "Pod 2", "Shipping Container", "Donated", "Trash"
+  condition      String?        // "Good", "Fair", "Poor", "New"
+  quantity       Int            @default(1)
+  barcode        String         @unique
+  photoUrl       String?
+  photoUrls      String?        // JSON array of additional photo URLs
+  notes          String?
+  boxNumber      String?        // which box/group it's in
+  estimatedValue Float?         // estimated dollar value
+  tags           String?        // JSON array of tag strings
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  activityLogs   ActivityLog[]
+}
+
+model ActivityLog {
+  id        String   @id @default(cuid())
+  itemId    String
+  item      Item     @relation(fields: [itemId], references: [id], onDelete: Cascade)
+  action    String   // "created", "updated", "moved", "deleted"
+  details   String   // human-readable description
+  user      String   // username who performed action
+  createdAt DateTime @default(now())
+}
+
+model Tag {
+  id    String @id @default(cuid())
+  name  String @unique
+  color String @default("#6b7280") // hex color
 }

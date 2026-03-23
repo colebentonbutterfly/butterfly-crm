@@ -20,8 +20,23 @@ interface Item {
   photoUrls: string | null;
   notes: string | null;
   boxNumber: string | null;
+  estimatedValue: number | null;
+  tags: string | null;
   createdAt: string;
   updatedAt: string;
+}
+
+interface ActivityEntry {
+  id: string;
+  action: string;
+  details: string;
+  user: string;
+  createdAt: string;
+}
+
+function escapeHtml(text: string): string {
+  const map: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" };
+  return text.replace(/[&<>"']/g, (m) => map[m]);
 }
 
 export default function ItemDetailPage() {
@@ -31,6 +46,10 @@ export default function ItemDetailPage() {
   const [item, setItem] = useState<Item | null>(null);
   const [loading, setLoading] = useState(true);
   const [activePhoto, setActivePhoto] = useState(0);
+  const [activity, setActivity] = useState<ActivityEntry[]>([]);
+  const [showQR, setShowQR] = useState(false);
+  const [touchStart, setTouchStart] = useState<number | null>(null);
+  const [swipeOffset, setSwipeOffset] = useState(0);
   const barcodeRef = useRef<SVGSVGElement>(null);
   const printBarcodeRef = useRef<SVGSVGElement>(null);
 
@@ -39,12 +58,21 @@ export default function ItemDetailPage() {
     ...(item.photoUrls ? JSON.parse(item.photoUrls) : []),
   ] : [];
 
+  const itemTags: string[] = item?.tags ? JSON.parse(item.tags) : [];
+
   useEffect(() => {
     fetch(`/api/items/${params.id}`)
       .then((r) => { if (!r.ok) throw new Error(); return r.json(); })
       .then(setItem)
       .catch(() => setItem(null))
       .finally(() => setLoading(false));
+  }, [params.id]);
+
+  useEffect(() => {
+    fetch(`/api/items/activity?itemId=${params.id}&limit=10`)
+      .then((r) => r.json())
+      .then((data) => setActivity(data.logs || []))
+      .catch(() => {});
   }, [params.id]);
 
   useEffect(() => {
@@ -85,6 +113,11 @@ export default function ItemDetailPage() {
       const updated = await res.json();
       setItem(updated);
       toast(`Moved to ${newLocation}`);
+      // Refresh activity
+      fetch(`/api/items/activity?itemId=${params.id}&limit=10`)
+        .then((r) => r.json())
+        .then((data) => setActivity(data.logs || []))
+        .catch(() => {});
     } else {
       toast("Failed to move item", "error");
     }
@@ -95,17 +128,42 @@ export default function ItemDetailPage() {
     if (!printWindow || !printBarcodeRef.current) return;
     const svgHTML = printBarcodeRef.current.outerHTML;
     printWindow.document.write(`
-      <html><head><title>Label - ${item?.barcode}</title>
+      <html><head><title>Label - ${escapeHtml(item?.barcode || "")}</title>
       <style>body{display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;margin:0;font-family:sans-serif;}
       .name{font-size:12px;font-weight:bold;margin-bottom:4px;}.loc{font-size:10px;color:#666;margin-bottom:8px;}</style></head>
-      <body><div class="name">${item?.name}</div><div class="loc">${item?.location}</div>${svgHTML}
-      <script>window.onload=function(){window.print();window.close();}</script></body></html>
+      <body><div class="name">${escapeHtml(item?.name || "")}</div><div class="loc">${escapeHtml(item?.location || "")}</div>${svgHTML}
+      <script>window.onload=function(){window.print();window.close();}<\/script></body></html>
     `);
     printWindow.document.close();
   }
 
   function handlePrintDetail() {
     window.print();
+  }
+
+  // Swipe handlers for mobile quick transfer
+  function handleTouchStart(e: React.TouchEvent) {
+    setTouchStart(e.touches[0].clientX);
+  }
+  function handleTouchMove(e: React.TouchEvent) {
+    if (touchStart === null) return;
+    const diff = e.touches[0].clientX - touchStart;
+    setSwipeOffset(diff);
+  }
+  function handleTouchEnd() {
+    if (!item) { setTouchStart(null); setSwipeOffset(0); return; }
+    const LOCATIONS_LIST = ["Pod 1", "Pod 2", "Shipping Container", "Donated", "Trash"];
+    const currentIdx = LOCATIONS_LIST.indexOf(item.location);
+
+    if (Math.abs(swipeOffset) > 100) {
+      if (swipeOffset > 0 && currentIdx > 0) {
+        handleMove(LOCATIONS_LIST[currentIdx - 1]);
+      } else if (swipeOffset < 0 && currentIdx < LOCATIONS_LIST.length - 1) {
+        handleMove(LOCATIONS_LIST[currentIdx + 1]);
+      }
+    }
+    setTouchStart(null);
+    setSwipeOffset(0);
   }
 
   if (loading) return <SkeletonDetail />;
@@ -125,7 +183,12 @@ export default function ItemDetailPage() {
   return (
     <>
       {/* Screen version */}
-      <div className="space-y-6 mt-2 print:hidden">
+      <div
+        className="space-y-6 mt-2 print:hidden"
+        onTouchStart={handleTouchStart}
+        onTouchMove={handleTouchMove}
+        onTouchEnd={handleTouchEnd}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400">
             <Link href="/inventory" className="hover:text-attic-600">Inventory</Link>
@@ -133,6 +196,12 @@ export default function ItemDetailPage() {
             <span className="text-gray-700 dark:text-gray-200">{item.name}</span>
           </div>
           <div className="flex items-center gap-2">
+            <button onClick={() => setShowQR(!showQR)} className="btn-secondary text-sm" title="QR Code">
+              <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" />
+              </svg>
+              QR
+            </button>
             <button onClick={handlePrintLabel} className="btn-secondary text-sm" title="Print barcode label">
               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
@@ -146,6 +215,25 @@ export default function ItemDetailPage() {
               Print
             </button>
           </div>
+        </div>
+
+        {/* QR Code modal */}
+        {showQR && (
+          <div className="card text-center">
+            <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-2">Shareable QR Code</h3>
+            <img
+              src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(typeof window !== "undefined" ? window.location.href : "")}`}
+              alt="QR Code"
+              className="mx-auto w-48 h-48"
+            />
+            <p className="text-xs text-gray-400 mt-2">Scan to view this item</p>
+            <button onClick={() => setShowQR(false)} className="btn-secondary text-sm mt-2">Close</button>
+          </div>
+        )}
+
+        {/* Swipe hint on mobile */}
+        <div className="md:hidden text-center">
+          <p className="text-xs text-gray-400 dark:text-gray-500">Swipe left/right to transfer between locations</p>
         </div>
 
         <div className="flex flex-col md:flex-row gap-6">
@@ -181,7 +269,6 @@ export default function ItemDetailPage() {
             <div className="card text-center">
               <svg ref={barcodeRef} className="mx-auto" />
             </div>
-            {/* Hidden barcode for label printing */}
             <svg ref={printBarcodeRef} className="hidden" />
           </div>
 
@@ -191,11 +278,20 @@ export default function ItemDetailPage() {
               <div className="flex items-start justify-between">
                 <div>
                   <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.name}</h1>
-                  <div className="flex items-center gap-2 mt-2">
+                  <div className="flex items-center gap-2 mt-2 flex-wrap">
                     <LocationBadge location={item.location} />
                     {item.condition && <span className="badge bg-gray-100 dark:bg-gray-700 text-gray-600 dark:text-gray-300">{item.condition}</span>}
+                    {itemTags.map((tag) => (
+                      <span key={tag} className="badge bg-attic-100 dark:bg-attic-900 text-attic-700 dark:text-attic-300">{tag}</span>
+                    ))}
                   </div>
                 </div>
+                {item.estimatedValue != null && item.estimatedValue > 0 && (
+                  <div className="text-right">
+                    <p className="text-xs text-gray-500 dark:text-gray-400">Est. Value</p>
+                    <p className="text-lg font-bold text-green-600 dark:text-green-400">${item.estimatedValue.toFixed(2)}</p>
+                  </div>
+                )}
               </div>
 
               {item.description && (
@@ -257,6 +353,28 @@ export default function ItemDetailPage() {
               </div>
             </div>
 
+            {/* Activity Log */}
+            {activity.length > 0 && (
+              <div className="card">
+                <h3 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Recent Activity</h3>
+                <div className="space-y-2">
+                  {activity.map((log) => (
+                    <div key={log.id} className="flex items-start gap-2 text-sm">
+                      <span className={`w-2 h-2 rounded-full mt-1.5 shrink-0 ${
+                        log.action === "created" ? "bg-green-500" :
+                        log.action === "moved" ? "bg-blue-500" :
+                        log.action === "deleted" ? "bg-red-500" : "bg-gray-400"
+                      }`} />
+                      <div>
+                        <p className="text-gray-700 dark:text-gray-200">{log.details}</p>
+                        <p className="text-xs text-gray-400">{log.user} &middot; {new Date(log.createdAt).toLocaleString()}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {/* Actions */}
             <div className="flex items-center gap-3">
               <Link href={`/items/${item.id}/edit`} className="btn-primary">Edit Item</Link>
@@ -266,12 +384,15 @@ export default function ItemDetailPage() {
         </div>
       </div>
 
-      {/* Print version - clean item detail sheet */}
+      {/* Print version */}
       <div className="hidden print:block">
         <div className="flex items-start justify-between mb-6">
           <div>
             <h1 className="text-2xl font-bold">{item.name}</h1>
             <p className="text-gray-600 mt-1">{item.category} &middot; {item.location}</p>
+            {item.estimatedValue != null && item.estimatedValue > 0 && (
+              <p className="text-gray-600">Est. Value: ${item.estimatedValue.toFixed(2)}</p>
+            )}
           </div>
           <div className="text-right">
             <svg ref={barcodeRef} />
@@ -295,15 +416,15 @@ export default function ItemDetailPage() {
               <td className="py-2">{item.quantity}</td>
             </tr>
             <tr className="border-b">
-              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Location</td>
+              <td className="py-2 font-medium text-gray-600">Location</td>
               <td className="py-2">{item.location}</td>
-              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Box / Group</td>
+              <td className="py-2 font-medium text-gray-600">Box / Group</td>
               <td className="py-2">{item.boxNumber || "N/A"}</td>
             </tr>
             <tr className="border-b">
-              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Barcode</td>
+              <td className="py-2 font-medium text-gray-600">Barcode</td>
               <td className="py-2 font-mono">{item.barcode}</td>
-              <td className="py-2 font-medium text-gray-600 dark:text-gray-300">Added</td>
+              <td className="py-2 font-medium text-gray-600">Added</td>
               <td className="py-2">{new Date(item.createdAt).toLocaleDateString()}</td>
             </tr>
           </tbody>

@@ -1,18 +1,40 @@
 import { prisma } from "@/lib/prisma";
 import { generateBarcode } from "@/lib/barcode";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth, getUsername } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
+import { createItemSchema, searchSchema } from "@/lib/validation";
 
 export async function GET(req: NextRequest) {
+  const { error: authError } = await requireAuth();
+  if (authError) return authError;
+
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  if (!rateLimit(`items-get-${ip}`, 120)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
   const url = req.nextUrl;
-  const search = url.searchParams.get("search") || "";
-  const category = url.searchParams.get("category") || "";
-  const location = url.searchParams.get("location") || "";
-  const boxNumber = url.searchParams.get("boxNumber") || "";
-  const sortBy = url.searchParams.get("sortBy") || "updatedAt";
-  const sortOrder = url.searchParams.get("sortOrder") || "desc";
-  const page = parseInt(url.searchParams.get("page") || "1");
-  const limit = parseInt(url.searchParams.get("limit") || "50");
-  const all = url.searchParams.get("all") === "true";
+  const params = searchSchema.safeParse({
+    search: url.searchParams.get("search") || undefined,
+    category: url.searchParams.get("category") || undefined,
+    location: url.searchParams.get("location") || undefined,
+    boxNumber: url.searchParams.get("boxNumber") || undefined,
+    sortBy: url.searchParams.get("sortBy") || undefined,
+    sortOrder: url.searchParams.get("sortOrder") || undefined,
+    page: url.searchParams.get("page") || undefined,
+    limit: url.searchParams.get("limit") || undefined,
+  });
+
+  if (!params.success) {
+    return NextResponse.json({ error: "Invalid parameters" }, { status: 400 });
+  }
+
+  const { search, category, location, boxNumber, sortBy, sortOrder, page, limit } = {
+    search: "", category: "", location: "", boxNumber: "",
+    sortBy: "updatedAt", sortOrder: "desc" as const, page: 1, limit: 50,
+    ...params.data,
+  };
 
   const where: Record<string, unknown> = {};
 
@@ -29,14 +51,17 @@ export async function GET(req: NextRequest) {
   if (location) where.location = location;
   if (boxNumber) where.boxNumber = boxNumber;
 
-  const validSortFields = ["name", "category", "location", "updatedAt", "createdAt", "quantity"];
+  const validSortFields = ["name", "category", "location", "updatedAt", "createdAt", "quantity", "estimatedValue"];
   const orderField = validSortFields.includes(sortBy) ? sortBy : "updatedAt";
   const orderDir = sortOrder === "asc" ? "asc" : "desc";
 
-  if (all) {
+  // Export mode: bounded to 5000 items max
+  const exportMode = url.searchParams.get("export") === "true";
+  if (exportMode) {
     const items = await prisma.item.findMany({
       where,
       orderBy: { [orderField]: orderDir },
+      take: 5000,
     });
     return NextResponse.json(items);
   }
@@ -46,7 +71,7 @@ export async function GET(req: NextRequest) {
       where,
       orderBy: { [orderField]: orderDir },
       skip: (page - 1) * limit,
-      take: limit,
+      take: Math.min(limit, 200),
     }),
     prisma.item.count({ where }),
   ]);
@@ -61,27 +86,47 @@ export async function GET(req: NextRequest) {
 }
 
 export async function POST(req: NextRequest) {
-  const body = await req.json();
+  const { error: authError, session } = await requireAuth();
+  if (authError) return authError;
 
-  if (!body.name || !body.name.trim()) {
-    return NextResponse.json({ error: "Item name is required" }, { status: 400 });
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  if (!rateLimit(`items-post-${ip}`, 30, 60000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
   }
 
-  const barcode = body.barcode || generateBarcode();
+  const body = await req.json();
+  const parsed = createItemSchema.safeParse(body);
+  if (!parsed.success) {
+    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+  }
+
+  const data = parsed.data;
+  const barcode = data.barcode || generateBarcode();
 
   const item = await prisma.item.create({
     data: {
-      name: body.name.trim(),
-      description: body.description || null,
-      category: body.category || "Miscellaneous",
-      location: body.location || "Pod 1",
-      condition: body.condition || null,
-      quantity: body.quantity || 1,
+      name: data.name.trim(),
+      description: data.description || null,
+      category: data.category || "Miscellaneous",
+      location: data.location || "Pod 1",
+      condition: data.condition || null,
+      quantity: data.quantity || 1,
       barcode,
-      photoUrl: body.photoUrl || null,
-      photoUrls: body.photoUrls ? JSON.stringify(body.photoUrls) : null,
-      notes: body.notes || null,
-      boxNumber: body.boxNumber || null,
+      photoUrl: data.photoUrl || null,
+      photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : null,
+      notes: data.notes || null,
+      boxNumber: data.boxNumber || null,
+      estimatedValue: data.estimatedValue ?? null,
+      tags: data.tags ? JSON.stringify(data.tags) : null,
+    },
+  });
+
+  await prisma.activityLog.create({
+    data: {
+      itemId: item.id,
+      action: "created",
+      details: `Created item "${item.name}" in ${item.location}`,
+      user: getUsername(session),
     },
   });
 

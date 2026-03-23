@@ -18,6 +18,10 @@ interface Item {
   barcode: string;
   photoUrl: string | null;
   boxNumber: string | null;
+  estimatedValue: number | null;
+  tags: string | null;
+  notes: string | null;
+  createdAt: string;
   updatedAt: string;
 }
 
@@ -76,6 +80,15 @@ export default function InventoryPage() {
     return () => clearTimeout(timer);
   }, [fetchItems]);
 
+  // Read location from URL on mount
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const loc = params.get("location");
+    const cat = params.get("category");
+    if (loc) setLocation(loc);
+    if (cat) setCategory(cat);
+  }, []);
+
   function toggleSelect(id: string) {
     setSelected((prev) => {
       const next = new Set(prev);
@@ -110,6 +123,52 @@ export default function InventoryPage() {
     }
   }
 
+  async function handleExportCSV() {
+    try {
+      const params = new URLSearchParams();
+      if (search) params.set("search", search);
+      if (category) params.set("category", category);
+      if (location) params.set("location", location);
+      params.set("export", "true");
+
+      const res = await fetch(`/api/items?${params}`);
+      const allItems = await res.json();
+
+      const headers = ["Name", "Category", "Location", "Condition", "Quantity", "Barcode", "Box/Group", "Est. Value", "Description", "Notes", "Tags", "Created", "Updated"];
+      const rows = allItems.map((item: Item) => [
+        item.name,
+        item.category,
+        item.location,
+        item.condition || "",
+        item.quantity,
+        item.barcode,
+        item.boxNumber || "",
+        item.estimatedValue ?? "",
+        (item.description || "").replace(/"/g, '""'),
+        (item.notes || "").replace(/"/g, '""'),
+        item.tags ? JSON.parse(item.tags).join("; ") : "",
+        new Date(item.createdAt).toLocaleDateString(),
+        new Date(item.updatedAt).toLocaleDateString(),
+      ]);
+
+      const csv = [
+        headers.join(","),
+        ...rows.map((r: string[]) => r.map((v: string | number) => `"${v}"`).join(",")),
+      ].join("\n");
+
+      const blob = new Blob([csv], { type: "text/csv" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `debs-attic-inventory-${new Date().toISOString().split("T")[0]}.csv`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast("CSV exported!");
+    } catch {
+      toast("Export failed", "error");
+    }
+  }
+
   function toggleSort(field: string) {
     if (sortBy === field) setSortOrder((o) => o === "asc" ? "desc" : "asc");
     else { setSortBy(field); setSortOrder("asc"); }
@@ -120,9 +179,15 @@ export default function InventoryPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Inventory</h1>
         <div className="flex items-center gap-2">
+          <button onClick={handleExportCSV} className="btn-secondary text-sm" title="Export as CSV">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            CSV
+          </button>
           <button
             onClick={() => setBatchMode(!batchMode)}
-            className={`text-sm px-3 py-2 rounded-lg border transition-colors ${batchMode ? "bg-attic-100 dark:bg-attic-900 border-attic-300 text-attic-700 dark:text-attic-300" : "border-gray-300 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
+            className={`text-sm px-3 py-2 rounded-lg border transition-colors ${batchMode ? "bg-attic-100 dark:bg-attic-900 border-attic-300 text-attic-700 dark:text-attic-300" : "border-gray-300 dark:border-gray-600 text-gray-600 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700"}`}
           >
             {batchMode ? "Cancel" : "Batch"}
           </button>
@@ -161,6 +226,7 @@ export default function InventoryPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="input-field"
+              maxLength={200}
             />
           </div>
           <select value={category} onChange={(e) => setCategory(e.target.value)} className="select-field">
@@ -179,14 +245,15 @@ export default function InventoryPage() {
             <option value="name-desc">Name Z-A</option>
             <option value="category-asc">Category A-Z</option>
             <option value="quantity-desc">Quantity High-Low</option>
+            <option value="estimatedValue-desc">Value High-Low</option>
           </select>
         </div>
       </div>
 
       {/* Batch actions */}
       {batchMode && (
-        <div className="card bg-attic-50 border-attic-200 flex flex-wrap items-center gap-3">
-          <button onClick={selectAll} className="text-sm text-attic-700 hover:underline">
+        <div className="card bg-attic-50 dark:bg-attic-900/30 border-attic-200 dark:border-attic-800 flex flex-wrap items-center gap-3">
+          <button onClick={selectAll} className="text-sm text-attic-700 dark:text-attic-300 hover:underline">
             {selected.size === items.length ? "Deselect All" : "Select All"}
           </button>
           <span className="text-sm text-gray-500 dark:text-gray-400">{selected.size} selected</span>
@@ -200,7 +267,7 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Results count + pagination info */}
+      {/* Results count */}
       <div className="flex items-center justify-between">
         <p className="text-sm text-gray-500 dark:text-gray-400">{total} item{total !== 1 ? "s" : ""} found</p>
         {totalPages > 1 && (
@@ -216,16 +283,12 @@ export default function InventoryPage() {
         )
       ) : items.length === 0 ? (
         <div className="card text-center py-12">
-          <svg className="w-16 h-16 text-attic-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-          </svg>
           <p className="text-gray-400 dark:text-gray-500 text-lg mb-2">No items found</p>
           <p className="text-gray-400 dark:text-gray-500 text-sm mb-4">Try adjusting your search or filters</p>
           <Link href="/items/new" className="btn-primary">Add First Item</Link>
         </div>
       ) : viewMode === "list" ? (
         <div className="space-y-2">
-          {/* Sort headers */}
           <div className="hidden sm:grid grid-cols-12 gap-4 px-4 text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide">
             {batchMode && <div className="col-span-1" />}
             <div className={`${batchMode ? "col-span-4" : "col-span-5"} cursor-pointer hover:text-gray-700`} onClick={() => toggleSort("name")}>
@@ -240,43 +303,52 @@ export default function InventoryPage() {
             </div>
             <div className="col-span-2">Barcode</div>
           </div>
-          {items.map((item) => (
-            <div key={item.id} className="card block hover:shadow-md transition-shadow">
-              <div className="flex items-center gap-4">
-                {batchMode && (
-                  <input
-                    type="checkbox"
-                    checked={selected.has(item.id)}
-                    onChange={() => toggleSelect(item.id)}
-                    className="w-4 h-4 rounded border-gray-300 text-attic-600 focus:ring-attic-500 shrink-0"
-                  />
-                )}
-                <Link href={`/items/${item.id}`} className="flex items-center gap-4 flex-1 min-w-0">
-                  {item.photoUrl ? (
-                    <img src={item.photoUrl} alt={item.name} className="w-16 h-16 object-cover rounded-lg shrink-0" />
-                  ) : (
-                    <div className="w-16 h-16 bg-attic-100 rounded-lg flex items-center justify-center shrink-0">
-                      <svg className="w-8 h-8 text-attic-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
-                      </svg>
-                    </div>
+          {items.map((item) => {
+            const tags: string[] = item.tags ? JSON.parse(item.tags) : [];
+            return (
+              <div key={item.id} className="card block hover:shadow-md transition-shadow">
+                <div className="flex items-center gap-4">
+                  {batchMode && (
+                    <input
+                      type="checkbox"
+                      checked={selected.has(item.id)}
+                      onChange={() => toggleSelect(item.id)}
+                      className="w-4 h-4 rounded border-gray-300 text-attic-600 focus:ring-attic-500 shrink-0"
+                    />
                   )}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</h3>
-                      <LocationBadge location={item.location} />
+                  <Link href={`/items/${item.id}`} className="flex items-center gap-4 flex-1 min-w-0">
+                    {item.photoUrl ? (
+                      <img src={item.photoUrl} alt={item.name} className="w-16 h-16 object-cover rounded-lg shrink-0" />
+                    ) : (
+                      <div className="w-16 h-16 bg-attic-100 dark:bg-attic-900 rounded-lg flex items-center justify-center shrink-0">
+                        <svg className="w-8 h-8 text-attic-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h3 className="font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</h3>
+                        <LocationBadge location={item.location} />
+                        {tags.map((t) => (
+                          <span key={t} className="badge bg-attic-100 dark:bg-attic-900 text-attic-700 dark:text-attic-300 text-[10px]">{t}</span>
+                        ))}
+                      </div>
+                      <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">
+                        {item.category}{item.boxNumber ? ` · ${item.boxNumber}` : ""}
+                        {item.estimatedValue ? ` · $${item.estimatedValue}` : ""}
+                      </p>
+                      <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{item.barcode}</p>
                     </div>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-0.5">{item.category}{item.boxNumber ? ` · ${item.boxNumber}` : ""}</p>
-                    <p className="text-xs text-gray-400 dark:text-gray-500 font-mono mt-0.5">{item.barcode}</p>
-                  </div>
-                  <div className="text-right shrink-0 hidden sm:block">
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Qty: {item.quantity}</p>
-                    {item.condition && <p className="text-xs text-gray-400 dark:text-gray-500">{item.condition}</p>}
-                  </div>
-                </Link>
+                    <div className="text-right shrink-0 hidden sm:block">
+                      <p className="text-sm text-gray-500 dark:text-gray-400">Qty: {item.quantity}</p>
+                      {item.condition && <p className="text-xs text-gray-400 dark:text-gray-500">{item.condition}</p>}
+                    </div>
+                  </Link>
+                </div>
               </div>
-            </div>
-          ))}
+            );
+          })}
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
@@ -294,14 +366,16 @@ export default function InventoryPage() {
                 {item.photoUrl ? (
                   <img src={item.photoUrl} alt={item.name} className="w-full h-32 object-cover rounded-lg mb-2" />
                 ) : (
-                  <div className="w-full h-32 bg-attic-100 rounded-lg flex items-center justify-center mb-2">
+                  <div className="w-full h-32 bg-attic-100 dark:bg-attic-900 rounded-lg flex items-center justify-center mb-2">
                     <svg className="w-12 h-12 text-attic-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
                     </svg>
                   </div>
                 )}
                 <h3 className="font-medium text-gray-900 dark:text-gray-100 text-sm truncate">{item.name}</h3>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{item.category}</p>
+                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                  {item.category}{item.estimatedValue ? ` · $${item.estimatedValue}` : ""}
+                </p>
                 <div className="mt-1.5">
                   <LocationBadge location={item.location} />
                 </div>
@@ -349,7 +423,6 @@ export default function InventoryPage() {
         </div>
       )}
 
-      {/* Keyboard shortcut hint */}
       <div className="text-center pb-4">
         <p className="text-xs text-gray-400 dark:text-gray-500">
           Press <kbd className="bg-gray-100 dark:bg-gray-800 px-1.5 py-0.5 rounded text-gray-500 dark:text-gray-400">Ctrl+K</kbd> for quick search

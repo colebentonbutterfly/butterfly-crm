@@ -15,7 +15,9 @@ interface Stats {
     category: string;
     location: string;
     updatedAt: string;
+    estimatedValue: number | null;
   }[];
+  totalEstimatedValue: number;
 }
 
 export default function Dashboard() {
@@ -37,6 +39,18 @@ export default function Dashboard() {
   const progress = Math.round((transferred / totalItems) * 100);
   const isEmpty = stats.total === 0;
 
+  // Bar chart max for scaling
+  const maxCategoryCount = stats.byCategory.length > 0 ? Math.max(...stats.byCategory.map((c) => c.count)) : 1;
+
+  // Location chart data
+  const locationColors: Record<string, string> = {
+    "Pod 1": "#3b82f6",
+    "Pod 2": "#8b5cf6",
+    "Shipping Container": "#10b981",
+    "Donated": "#f59e0b",
+    "Trash": "#ef4444",
+  };
+
   return (
     <div className="space-y-6 mt-2">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
@@ -53,7 +67,6 @@ export default function Dashboard() {
       </div>
 
       {isEmpty ? (
-        /* Onboarding empty state */
         <div className="card text-center py-12">
           <svg className="w-20 h-20 text-attic-200 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 7l-8-4-8 4m16 0l-8 4m8-4v10l-8 4m0-10L4 7m8 4v10M4 7v10l8 4" />
@@ -63,44 +76,28 @@ export default function Dashboard() {
             Start cataloging your estate inventory. Add items, assign them to locations, and track everything as it moves from pods to the shipping container.
           </p>
           <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
-            <Link href="/items/new" className="btn-primary">
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
-              </svg>
-              Add Your First Item
-            </Link>
-            <Link href="/print-barcodes" className="btn-secondary">
-              Print Barcode Labels
-            </Link>
-            <Link href="/scanner" className="btn-secondary">
-              Scan a Barcode
-            </Link>
-          </div>
-          <div className="mt-8 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg mx-auto text-left">
-            <div className="p-3 rounded-lg bg-attic-50 dark:bg-gray-800">
-              <p className="text-sm font-medium text-attic-700 dark:text-attic-300">Step 1</p>
-              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Print barcode labels and stick them on items</p>
-            </div>
-            <div className="p-3 rounded-lg bg-attic-50 dark:bg-gray-800">
-              <p className="text-sm font-medium text-attic-700 dark:text-attic-300">Step 2</p>
-              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Scan or add items to catalog them</p>
-            </div>
-            <div className="p-3 rounded-lg bg-attic-50 dark:bg-gray-800">
-              <p className="text-sm font-medium text-attic-700 dark:text-attic-300">Step 3</p>
-              <p className="text-xs text-gray-600 dark:text-gray-300 mt-1">Transfer items as they move locations</p>
-            </div>
+            <Link href="/items/new" className="btn-primary">Add Your First Item</Link>
+            <Link href="/print-barcodes" className="btn-secondary">Print Barcode Labels</Link>
+            <Link href="/scanner" className="btn-secondary">Scan a Barcode</Link>
           </div>
         </div>
       ) : (
         <>
           {/* Stats cards */}
-          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
             {Object.entries(stats.byLocation).map(([loc, count]) => (
               <Link key={loc} href={`/inventory?location=${encodeURIComponent(loc)}`} className="card text-center hover:shadow-md transition-shadow">
                 <p className="text-2xl font-bold text-attic-700 dark:text-attic-300">{count}</p>
                 <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{loc}</p>
               </Link>
             ))}
+            {/* Total value card */}
+            <div className="card text-center">
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                ${stats.totalEstimatedValue.toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 0 })}
+              </p>
+              <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Est. Total Value</p>
+            </div>
           </div>
 
           {/* Transfer progress */}
@@ -119,50 +116,85 @@ export default function Dashboard() {
           </div>
 
           <div className="grid md:grid-cols-2 gap-6">
-            {/* Categories breakdown */}
+            {/* Location chart */}
+            <div className="card">
+              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Items by Location</h2>
+              <div className="space-y-3">
+                {Object.entries(stats.byLocation).map(([loc, count]) => (
+                  <div key={loc}>
+                    <div className="flex items-center justify-between text-sm mb-1">
+                      <span className="text-gray-600 dark:text-gray-300">{loc}</span>
+                      <span className="font-medium text-gray-700 dark:text-gray-200">{count}</span>
+                    </div>
+                    <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-3">
+                      <div
+                        className="h-3 rounded-full transition-all duration-500"
+                        style={{
+                          width: `${stats.total === 0 ? 0 : (count / stats.total) * 100}%`,
+                          backgroundColor: locationColors[loc] || "#6b7280",
+                        }}
+                      />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Category chart */}
             <div className="card">
               <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Items by Category</h2>
               {stats.byCategory.length === 0 ? (
-                <p className="text-sm text-gray-400 dark:text-gray-500">No items yet. Start adding inventory!</p>
-              ) : (
-                <div className="space-y-2">
-                  {stats.byCategory.map((c) => (
-                    <Link
-                      key={c.category}
-                      href={`/inventory?category=${encodeURIComponent(c.category)}`}
-                      className="flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1 rounded-lg transition-colors"
-                    >
-                      <span className="text-sm text-gray-600 dark:text-gray-300">{c.category}</span>
-                      <span className="text-sm font-medium text-attic-700 dark:text-attic-300">{c.count}</span>
-                    </Link>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {/* Recent items */}
-            <div className="card">
-              <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Recently Updated</h2>
-              {stats.recentItems.length === 0 ? (
                 <p className="text-sm text-gray-400 dark:text-gray-500">No items yet.</p>
               ) : (
                 <div className="space-y-2">
-                  {stats.recentItems.map((item) => (
+                  {stats.byCategory.slice(0, 10).map((c) => (
                     <Link
-                      key={item.id}
-                      href={`/items/${item.id}`}
-                      className="flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                      key={c.category}
+                      href={`/inventory?category=${encodeURIComponent(c.category)}`}
+                      className="block hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1 rounded-lg transition-colors"
                     >
-                      <div>
-                        <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.name}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400">{item.category}</p>
+                      <div className="flex items-center justify-between text-sm mb-0.5">
+                        <span className="text-gray-600 dark:text-gray-300">{c.category}</span>
+                        <span className="font-medium text-attic-700 dark:text-attic-300">{c.count}</span>
                       </div>
-                      <LocationBadge location={item.location} />
+                      <div className="w-full bg-gray-100 dark:bg-gray-700 rounded-full h-2">
+                        <div
+                          className="bg-attic-500 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${(c.count / maxCategoryCount) * 100}%` }}
+                        />
+                      </div>
                     </Link>
                   ))}
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Recent items */}
+          <div className="card">
+            <h2 className="font-semibold text-gray-700 dark:text-gray-200 mb-3">Recently Updated</h2>
+            {stats.recentItems.length === 0 ? (
+              <p className="text-sm text-gray-400 dark:text-gray-500">No items yet.</p>
+            ) : (
+              <div className="space-y-2">
+                {stats.recentItems.map((item) => (
+                  <Link
+                    key={item.id}
+                    href={`/items/${item.id}`}
+                    className="flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 -mx-2 px-2 py-1.5 rounded-lg transition-colors"
+                  >
+                    <div>
+                      <p className="text-sm font-medium text-gray-800 dark:text-gray-100">{item.name}</p>
+                      <p className="text-xs text-gray-500 dark:text-gray-400">
+                        {item.category}
+                        {item.estimatedValue ? ` · $${item.estimatedValue}` : ""}
+                      </p>
+                    </div>
+                    <LocationBadge location={item.location} />
+                  </Link>
+                ))}
+              </div>
+            )}
           </div>
         </>
       )}

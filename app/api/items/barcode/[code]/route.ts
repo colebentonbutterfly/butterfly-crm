@@ -1,8 +1,13 @@
 import { prisma } from "@/lib/prisma";
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
 
 export async function GET(_req: NextRequest, { params }: { params: { code: string } }) {
-  const item = await prisma.item.findUnique({ where: { barcode: params.code } });
+  const { error: authError } = await requireAuth();
+  if (authError) return authError;
+
+  const code = params.code.slice(0, 100); // limit length
+  const item = await prisma.item.findUnique({ where: { barcode: code } });
   if (!item) return NextResponse.json({ error: "Not found" }, { status: 404 });
   return NextResponse.json(item);
 }

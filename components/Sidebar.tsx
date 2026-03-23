@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
+import { signOut, useSession } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
 
 const NAV_ITEMS = [
@@ -13,11 +14,13 @@ const NAV_ITEMS = [
   { href: "/scanner", label: "Scan Barcode", icon: "M12 4v1m6 11h2m-6 0h-2v4m0-11v3m0 0h.01M12 12h4.01M16 20h4M4 12h4m12 0h.01M5 8h2a1 1 0 001-1V5a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1zm12 0h2a1 1 0 001-1V5a1 1 0 00-1-1h-2a1 1 0 00-1 1v2a1 1 0 001 1zM5 20h2a1 1 0 001-1v-2a1 1 0 00-1-1H5a1 1 0 00-1 1v2a1 1 0 001 1z" },
   { href: "/price-lookup", label: "Price Lookup", icon: "M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" },
   { href: "/print-barcodes", label: "Print Labels", icon: "M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" },
+  { href: "/activity", label: "Activity Log", icon: "M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" },
 ];
 
 export default function Sidebar() {
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
+  const { data: session } = useSession();
 
   return (
     <>
@@ -70,7 +73,18 @@ export default function Sidebar() {
             );
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-attic-700">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-attic-700 space-y-3">
+          {session?.user && (
+            <div className="flex items-center justify-between">
+              <span className="text-attic-300 text-xs">Signed in as {session.user.name}</span>
+              <button
+                onClick={() => signOut({ callbackUrl: "/login" })}
+                className="text-attic-400 hover:text-white text-xs underline"
+              >
+                Sign out
+              </button>
+            </div>
+          )}
           <div className="flex items-center justify-between">
             <p className="text-attic-400 text-xs">2 Pods → 1 Container</p>
             <ThemeToggle />

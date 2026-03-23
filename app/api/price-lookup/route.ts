@@ -1,4 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
+import { requireAuth } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 
 const EBAY_APP_ID = process.env.EBAY_APP_ID || "";
 const EBAY_TOKEN_URL = "https://api.ebay.com/identity/v1/oauth2/token";
@@ -34,7 +36,15 @@ async function getEbayToken(): Promise<string> {
 }
 
 export async function GET(req: NextRequest) {
-  const query = req.nextUrl.searchParams.get("q") || "";
+  const { error: authError } = await requireAuth();
+  if (authError) return authError;
+
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  if (!rateLimit(`price-lookup-${ip}`, 20, 60000)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
+
+  const query = req.nextUrl.searchParams.get("q")?.slice(0, 200) || "";
   if (!query.trim()) {
     return NextResponse.json({ error: "Query is required" }, { status: 400 });
   }
@@ -49,7 +59,6 @@ export async function GET(req: NextRequest) {
   try {
     const token = await getEbayToken();
 
-    // Search active listings
     const searchRes = await fetch(
       `${EBAY_SEARCH_URL}?q=${encodeURIComponent(query)}&limit=10&sort=price`,
       {
@@ -58,8 +67,6 @@ export async function GET(req: NextRequest) {
     );
 
     if (!searchRes.ok) {
-      const err = await searchRes.text();
-      console.error("eBay API error:", err);
       return NextResponse.json({ error: "eBay search failed" }, { status: 502 });
     }
 
@@ -73,7 +80,6 @@ export async function GET(req: NextRequest) {
       seller: item.seller ? (item.seller as Record<string, string>).username : null,
     }));
 
-    // Calculate price stats
     const prices = items
       .map((i: { price?: { value?: string } }) => parseFloat(i.price?.value || "0"))
       .filter((p: number) => p > 0);
@@ -93,8 +99,7 @@ export async function GET(req: NextRequest) {
       items,
       total: data.total || 0,
     });
-  } catch (error) {
-    console.error("eBay lookup error:", error);
+  } catch {
     return NextResponse.json({ error: "Lookup failed" }, { status: 500 });
   }
 }
