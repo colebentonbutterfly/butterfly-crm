@@ -1,5 +1,5 @@
-const CACHE_NAME = 'debs-attic-v1';
-const STATIC_ASSETS = ['/', '/inventory', '/items/new', '/scanner', '/print-barcodes', '/boxes'];
+const CACHE_NAME = 'debs-attic-v2';
+const STATIC_ASSETS = ['/', '/inventory', '/items/new', '/scanner', '/print-barcodes', '/boxes', '/activity', '/login'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(
@@ -18,12 +18,19 @@ self.addEventListener('activate', (event) => {
 });
 
 self.addEventListener('fetch', (event) => {
+  // Don't cache API requests, auth, or POST
   if (event.request.method !== 'GET') return;
+  const url = new URL(event.request.url);
+  if (url.pathname.startsWith('/api/')) return;
+
   event.respondWith(
     fetch(event.request)
       .then((response) => {
-        const clone = response.clone();
-        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        // Only cache successful responses
+        if (response.status === 200) {
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, clone));
+        }
         return response;
       })
       .catch(() => caches.match(event.request))

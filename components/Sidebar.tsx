@@ -24,13 +24,15 @@ export default function Sidebar() {
 
   return (
     <>
-      {/* Mobile header */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-attic-800 text-white flex items-center justify-between px-4 py-3">
+      {/* Mobile header - iOS safe area aware */}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-attic-800 text-white flex items-center justify-between px-4 py-3"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" }}
+      >
         <div className="flex items-center gap-2">
-          <span className="text-2xl">🏠</span>
+          <AtticLogo size={28} />
           <span className="font-bold text-lg">Deb&apos;s Attic</span>
         </div>
-        <button onClick={() => setOpen(!open)} className="p-1">
+        <button onClick={() => setOpen(!open)} className="p-2 -mr-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d={open ? "M6 18L18 6M6 6l12 12" : "M4 6h16M4 12h16M4 18h16"} />
           </svg>
@@ -41,10 +43,13 @@ export default function Sidebar() {
       {open && <div className="md:hidden fixed inset-0 bg-black/50 z-30" onClick={() => setOpen(false)} />}
 
       {/* Sidebar */}
-      <aside className={`fixed top-0 left-0 h-full w-64 bg-attic-800 text-white z-40 transform transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0`}>
+      <aside
+        className={`fixed top-0 left-0 h-full w-64 bg-attic-800 text-white z-40 transform transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 overflow-y-auto overscroll-contain`}
+        style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
+      >
         <div className="p-6 border-b border-attic-700">
           <div className="flex items-center gap-3">
-            <span className="text-3xl">🏠</span>
+            <AtticLogo size={40} />
             <div>
               <h1 className="font-bold text-xl">Deb&apos;s Attic</h1>
               <p className="text-attic-300 text-xs">Estate Inventory</p>
@@ -59,7 +64,7 @@ export default function Sidebar() {
                 key={item.href}
                 href={item.href}
                 onClick={() => setOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
+                className={`flex items-center gap-3 px-3 py-3 rounded-lg text-sm font-medium transition-colors min-h-[44px] ${
                   active
                     ? "bg-attic-600 text-white"
                     : "text-attic-200 hover:bg-attic-700 hover:text-white"
@@ -73,13 +78,15 @@ export default function Sidebar() {
             );
           })}
         </nav>
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-attic-700 space-y-3">
+        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-attic-700 space-y-3"
+          style={{ paddingBottom: "max(env(safe-area-inset-bottom, 0px), 16px)" }}
+        >
           {session?.user && (
             <div className="flex items-center justify-between">
               <span className="text-attic-300 text-xs">Signed in as {session.user.name}</span>
               <button
                 onClick={() => signOut({ callbackUrl: "/login" })}
-                className="text-attic-400 hover:text-white text-xs underline"
+                className="text-attic-400 hover:text-white text-xs underline min-h-[44px] flex items-center"
               >
                 Sign out
               </button>
@@ -92,8 +99,32 @@ export default function Sidebar() {
         </div>
       </aside>
 
-      {/* Spacer for mobile header */}
-      <div className="md:hidden h-14" />
+      {/* Spacer for mobile header - matches header height + safe area */}
+      <div className="md:hidden h-14" style={{ paddingTop: "env(safe-area-inset-top, 0px)" }} />
     </>
   );
 }
+
+// Deb's Attic Logo Component - SVG house/attic icon with DA monogram
+function AtticLogo({ size = 40 }: { size?: number }) {
+  return (
+    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      {/* Background rounded square */}
+      <rect width="40" height="40" rx="8" fill="#c46224" />
+      {/* House/attic roof */}
+      <path d="M20 6L6 18H10V32H30V18H34L20 6Z" fill="#78350f" stroke="#fdf8f0" strokeWidth="0.5" />
+      {/* Attic window/triangle */}
+      <path d="M20 8L10 17H30L20 8Z" fill="#d47a2e" />
+      {/* Door */}
+      <rect x="16" y="22" width="8" height="10" rx="1" fill="#fdf8f0" opacity="0.9" />
+      {/* Window left */}
+      <rect x="11" y="19" width="4" height="4" rx="0.5" fill="#fdf8f0" opacity="0.7" />
+      {/* Window right */}
+      <rect x="25" y="19" width="4" height="4" rx="0.5" fill="#fdf8f0" opacity="0.7" />
+      {/* DA text */}
+      <text x="20" y="29" fontSize="7" textAnchor="middle" fill="#78350f" fontWeight="bold" fontFamily="sans-serif">DA</text>
+    </svg>
+  );
+}
+
+export { AtticLogo };

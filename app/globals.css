@@ -5,32 +5,71 @@
 @layer base {
   body {
     @apply antialiased;
+    -webkit-tap-highlight-color: transparent;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* Prevent iOS auto-zoom on input focus (requires font-size >= 16px) */
+  input[type="text"],
+  input[type="password"],
+  input[type="email"],
+  input[type="number"],
+  input[type="search"],
+  input[type="tel"],
+  input[type="url"],
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+  @screen sm {
+    input[type="text"],
+    input[type="password"],
+    input[type="email"],
+    input[type="number"],
+    input[type="search"],
+    input[type="tel"],
+    input[type="url"],
+    select,
+    textarea {
+      font-size: 0.875rem !important; /* text-sm on larger screens */
+    }
+  }
+
+  /* iOS safe areas */
+  .pb-safe {
+    padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 }
 
 @layer components {
   .btn-primary {
-    @apply bg-attic-600 hover:bg-attic-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center gap-2;
+    @apply bg-attic-600 hover:bg-attic-700 active:bg-attic-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 inline-flex items-center gap-2;
+    min-height: 44px; /* iOS touch target */
   }
   .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors duration-200
-      dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-200 dark:border-gray-600
+    @apply bg-white hover:bg-gray-50 active:bg-gray-100 text-gray-700 font-medium py-2.5 px-4 rounded-lg border border-gray-300 transition-colors duration-200
+      dark:bg-gray-800 dark:hover:bg-gray-700 dark:active:bg-gray-600 dark:text-gray-200 dark:border-gray-600
       inline-flex items-center gap-2;
+    min-height: 44px;
   }
   .btn-danger {
-    @apply bg-red-600 hover:bg-red-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 inline-flex items-center gap-2;
+    @apply bg-red-600 hover:bg-red-700 active:bg-red-800 text-white font-medium py-2.5 px-4 rounded-lg transition-colors duration-200 inline-flex items-center gap-2;
+    min-height: 44px;
   }
   .card {
     @apply bg-white rounded-xl shadow-sm border border-gray-200 p-4 md:p-6
       dark:bg-gray-800 dark:border-gray-700;
   }
   .input-field {
-    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-attic-500 focus:border-transparent
+    @apply w-full rounded-lg border border-gray-300 px-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-attic-500 focus:border-transparent
       dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100 dark:placeholder-gray-400;
+    min-height: 44px;
+    /* iOS: prevent zoom handled by base font-size rule */
   }
   .select-field {
-    @apply w-full rounded-lg border border-gray-300 px-3 py-2 text-sm bg-white focus:outline-none focus:ring-2 focus:ring-attic-500 focus:border-transparent
+    @apply w-full rounded-lg border border-gray-300 px-3 py-2.5 bg-white focus:outline-none focus:ring-2 focus:ring-attic-500 focus:border-transparent
       dark:bg-gray-700 dark:border-gray-600 dark:text-gray-100;
+    min-height: 44px;
   }
   .badge {
     @apply inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium;
@@ -58,6 +97,18 @@
 }
 .animate-slide-up {
   animation: slide-up 0.3s ease-out;
+}
+
+/* Touch interaction - remove 300ms delay on older iOS */
+* {
+  touch-action: manipulation;
+}
+
+/* iOS standalone PWA: account for status bar */
+@supports (padding-top: env(safe-area-inset-top)) {
+  .md\:hidden.fixed.top-0 {
+    padding-top: env(safe-area-inset-top);
+  }
 }
 
 @media print {
