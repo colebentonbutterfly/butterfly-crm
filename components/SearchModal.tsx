@@ -88,7 +88,7 @@ export default function SearchModal({ open, onClose }: { open: boolean; onClose:
                   key={item.id}
                   onClick={() => { onClose(); router.push(`/items/${item.id}`); }}
                   className={`w-full text-left px-4 py-2.5 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-700 ${
-                    i === selected ? "bg-attic-50" : ""
+                    i === selected ? "bg-attic-50 dark:bg-gray-800" : ""
                   }`}
                 >
                   <div>

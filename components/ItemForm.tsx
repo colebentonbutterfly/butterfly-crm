@@ -120,7 +120,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Item Name *</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Item Name *</label>
             <input
               type="text"
               value={form.name}
@@ -131,7 +131,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Category</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Category</label>
             <select value={form.category} onChange={(e) => set("category", e.target.value)} className="select-field">
               {CATEGORIES.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
@@ -151,19 +151,19 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Location</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Location</label>
             <select value={form.location} onChange={(e) => set("location", e.target.value)} className="select-field">
               {LOCATIONS.map((l) => <option key={l} value={l}>{l}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Condition</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Condition</label>
             <select value={form.condition} onChange={(e) => set("condition", e.target.value)} className="select-field">
               {CONDITIONS.map((c) => <option key={c} value={c}>{c}</option>)}
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Quantity</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Quantity</label>
             <input
               type="number"
               min={1}
@@ -176,7 +176,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Box / Group Number</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Box / Group Number</label>
             <input
               type="text"
               value={form.boxNumber}
@@ -186,7 +186,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Barcode</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Barcode</label>
             <input
               type="text"
               value={form.barcode}
@@ -262,7 +262,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
               </>
             )}
           </button>
-          <p className="text-xs text-gray-400 mt-1">Tap to use camera or select from gallery. You can add multiple photos.</p>
+          <p className="text-xs text-gray-400 dark:text-gray-500 mt-1">Tap to use camera or select from gallery. You can add multiple photos.</p>
         </div>
       </div>
 

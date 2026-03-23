@@ -61,7 +61,7 @@ export default function PrintBarcodesPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 print:hidden">
         <div>
           <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Print Barcode Labels</h1>
-          <p className="text-gray-500 text-sm">Generate and print barcode stickers for items</p>
+          <p className="text-gray-500 dark:text-gray-400 text-sm">Generate and print barcode stickers for items</p>
         </div>
       </div>
 
@@ -70,7 +70,7 @@ export default function PrintBarcodesPage() {
         <h2 className="font-semibold text-gray-700 dark:text-gray-200">Label Settings</h2>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Number of Labels</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Number of Labels</label>
             <select value={count} onChange={(e) => setCount(parseInt(e.target.value))} className="select-field">
               <option value={12}>12 labels (2x6)</option>
               <option value={24}>24 labels (3x8)</option>
@@ -80,7 +80,7 @@ export default function PrintBarcodesPage() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Label Prefix (optional)</label>
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Label Prefix (optional)</label>
             <input
               type="text"
               value={prefix}
@@ -123,11 +123,11 @@ export default function PrintBarcodesPage() {
             {labels.map((label, i) => (
               <div
                 key={i}
-                className="border border-gray-200 print:border-gray-300 p-2 text-center flex flex-col items-center justify-center"
+                className="border border-gray-200 dark:border-gray-600 print:border-gray-300 p-2 text-center flex flex-col items-center justify-center"
                 style={{ minHeight: "90px", pageBreakInside: "avoid" }}
               >
                 {label.label && (
-                  <p className="text-[9px] text-gray-600 font-medium mb-0.5 truncate w-full">{label.label}</p>
+                  <p className="text-[9px] text-gray-600 dark:text-gray-300 font-medium mb-0.5 truncate w-full">{label.label}</p>
                 )}
                 <svg id={`barcode-${i}`} className="max-w-full" />
               </div>
