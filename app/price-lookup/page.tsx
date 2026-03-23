@@ -105,7 +105,7 @@ export default function PriceLookupPage() {
     <div className="space-y-6 mt-2">
       <div>
         <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Price Lookup</h1>
-        <p className="text-gray-500 text-sm">Scan a manufacturer barcode (UPC/EAN) to check prices on eBay, Amazon, and Google</p>
+        <p className="text-gray-500 dark:text-gray-400 text-sm">Scan a manufacturer barcode (UPC/EAN) to check prices on eBay, Amazon, and Google</p>
       </div>
 
       {/* Camera scanner */}
@@ -166,7 +166,7 @@ export default function PriceLookupPage() {
               href={result.searchLinks.google}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-blue-300 hover:bg-blue-50 transition-colors"
+              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-blue-300 hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                 <span className="text-lg font-bold text-blue-600">G</span>
@@ -181,7 +181,7 @@ export default function PriceLookupPage() {
               href={result.searchLinks.ebay}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-red-300 hover:bg-red-50 transition-colors"
+              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-red-300 hover:bg-red-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="w-10 h-10 bg-red-100 rounded-full flex items-center justify-center">
                 <span className="text-lg font-bold text-red-600">e</span>
@@ -196,7 +196,7 @@ export default function PriceLookupPage() {
               href={result.searchLinks.amazon}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 hover:border-yellow-300 hover:bg-yellow-50 transition-colors"
+              className="flex items-center gap-3 p-4 rounded-lg border border-gray-200 dark:border-gray-600 hover:border-yellow-300 hover:bg-yellow-50 dark:hover:bg-gray-700 transition-colors"
             >
               <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                 <span className="text-lg font-bold text-yellow-700">A</span>
