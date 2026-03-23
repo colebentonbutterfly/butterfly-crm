@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ItemForm from "@/components/ItemForm";
+import { SkeletonDetail } from "@/components/Skeleton";
 
 export default function EditItemPage() {
   const params = useParams();
@@ -12,18 +13,19 @@ export default function EditItemPage() {
   useEffect(() => {
     fetch(`/api/items/${params.id}`)
       .then((r) => r.json())
-      .then((data) => setItem({ ...data, description: data.description || "", condition: data.condition || "Good", photoUrl: data.photoUrl || "", notes: data.notes || "", boxNumber: data.boxNumber || "" }))
+      .then((data) => setItem({
+        ...data,
+        description: data.description || "",
+        condition: data.condition || "Good",
+        photoUrl: data.photoUrl || "",
+        photoUrls: data.photoUrls ? JSON.parse(data.photoUrls) : [],
+        notes: data.notes || "",
+        boxNumber: data.boxNumber || "",
+      }))
       .finally(() => setLoading(false));
   }, [params.id]);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-attic-600" />
-      </div>
-    );
-  }
-
+  if (loading) return <SkeletonDetail />;
   if (!item) return <p>Item not found.</p>;
 
   return (

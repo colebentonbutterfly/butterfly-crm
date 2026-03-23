@@ -46,3 +46,21 @@
     @apply badge bg-red-100 text-red-800;
   }
 }
+
+@keyframes slide-up {
+  from { opacity: 0; transform: translateY(1rem); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out;
+}
+
+@media print {
+  aside, .md\:hidden, .print\:hidden { display: none !important; }
+  .print\:ml-0 { margin-left: 0 !important; }
+  .print\:block { display: block !important; }
+  .print\:shadow-none { box-shadow: none !important; }
+  .print\:border-none { border: none !important; }
+  .card { box-shadow: none; }
+  @page { margin: 0.5in; }
+}

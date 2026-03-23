@@ -17,6 +17,7 @@ model Item {
   quantity    Int      @default(1)
   barcode     String   @unique
   photoUrl    String?
+  photoUrls   String?  // JSON array of additional photo URLs
   notes       String?
   boxNumber   String?  // which box/group it's in
   createdAt   DateTime @default(now())

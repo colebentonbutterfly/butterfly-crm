@@ -3,6 +3,7 @@
 import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { CATEGORIES, LOCATIONS, CONDITIONS } from "@/lib/categories";
+import { useToast } from "@/components/Toast";
 
 interface ItemData {
   id?: string;
@@ -14,12 +15,14 @@ interface ItemData {
   quantity: number;
   barcode: string;
   photoUrl: string;
+  photoUrls: string[];
   notes: string;
   boxNumber: string;
 }
 
 export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: boolean }) {
   const router = useRouter();
+  const { toast } = useToast();
   const fileRef = useRef<HTMLInputElement>(null);
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -32,35 +35,60 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     quantity: item?.quantity || 1,
     barcode: item?.barcode || "",
     photoUrl: item?.photoUrl || "",
+    photoUrls: item?.photoUrls || [],
     notes: item?.notes || "",
     boxNumber: item?.boxNumber || "",
   });
 
-  const set = (field: keyof ItemData, value: string | number) =>
+  const set = (field: keyof ItemData, value: string | number | string[]) =>
     setForm((prev) => ({ ...prev, [field]: value }));
 
+  const allPhotos = [
+    ...(form.photoUrl ? [form.photoUrl] : []),
+    ...form.photoUrls,
+  ];
+
   async function handlePhotoUpload(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
     setUploading(true);
-    const fd = new FormData();
-    fd.append("file", file);
-
     try {
-      const res = await fetch("/api/upload", { method: "POST", body: fd });
-      const data = await res.json();
-      if (data.url) set("photoUrl", data.url);
+      for (const file of Array.from(files)) {
+        const fd = new FormData();
+        fd.append("file", file);
+        const res = await fetch("/api/upload", { method: "POST", body: fd });
+        const data = await res.json();
+        if (data.url) {
+          if (!form.photoUrl) {
+            set("photoUrl", data.url);
+          } else {
+            setForm((prev) => ({ ...prev, photoUrls: [...prev.photoUrls, data.url] }));
+          }
+        }
+      }
+      toast("Photo(s) uploaded");
     } catch {
-      alert("Upload failed. Please try again.");
+      toast("Upload failed. Please try again.", "error");
     } finally {
       setUploading(false);
+      if (fileRef.current) fileRef.current.value = "";
+    }
+  }
+
+  function removePhoto(url: string) {
+    if (url === form.photoUrl) {
+      const remaining = form.photoUrls;
+      set("photoUrl", remaining[0] || "");
+      set("photoUrls", remaining.slice(1));
+    } else {
+      set("photoUrls", form.photoUrls.filter((u) => u !== url));
     }
   }
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
-    if (!form.name.trim()) return alert("Please enter an item name.");
+    if (!form.name.trim()) { toast("Please enter an item name.", "error"); return; }
 
     setSaving(true);
     try {
@@ -76,9 +104,10 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
       if (!res.ok) throw new Error("Save failed");
 
       const saved = await res.json();
+      toast(isEdit ? "Item updated!" : "Item added!");
       router.push(`/items/${saved.id}`);
     } catch {
-      alert("Failed to save item. Please try again.");
+      toast("Failed to save item. Please try again.", "error");
     } finally {
       setSaving(false);
     }
@@ -174,26 +203,31 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
             value={form.notes}
             onChange={(e) => set("notes", e.target.value)}
             className="input-field"
-            rows={2}
-            placeholder="Any additional notes..."
+            rows={3}
+            placeholder="Any additional notes about the item, its history, value, etc..."
           />
         </div>
       </div>
 
       {/* Photo upload */}
       <div className="card space-y-4">
-        <h2 className="font-semibold text-gray-700">Photo</h2>
+        <h2 className="font-semibold text-gray-700">Photos</h2>
+        <p className="text-xs text-gray-500">Add multiple photos to document the item from different angles</p>
 
-        {form.photoUrl && (
-          <div className="relative inline-block">
-            <img src={form.photoUrl} alt="Item" className="w-48 h-48 object-cover rounded-lg" />
-            <button
-              type="button"
-              onClick={() => set("photoUrl", "")}
-              className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
-            >
-              X
-            </button>
+        {allPhotos.length > 0 && (
+          <div className="flex flex-wrap gap-3">
+            {allPhotos.map((url, i) => (
+              <div key={i} className="relative">
+                <img src={url} alt="Item" className="w-24 h-24 object-cover rounded-lg" />
+                <button
+                  type="button"
+                  onClick={() => removePhoto(url)}
+                  className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center text-xs hover:bg-red-600"
+                >
+                  X
+                </button>
+              </div>
+            ))}
           </div>
         )}
 
@@ -203,6 +237,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
             type="file"
             accept="image/*"
             capture="environment"
+            multiple
             onChange={handlePhotoUpload}
             className="hidden"
           />
@@ -223,11 +258,11 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
-                Take Photo / Upload
+                {allPhotos.length > 0 ? "Add More Photos" : "Take Photo / Upload"}
               </>
             )}
           </button>
-          <p className="text-xs text-gray-400 mt-1">Tap to use camera or select from gallery</p>
+          <p className="text-xs text-gray-400 mt-1">Tap to use camera or select from gallery. You can add multiple photos.</p>
         </div>
       </div>
 

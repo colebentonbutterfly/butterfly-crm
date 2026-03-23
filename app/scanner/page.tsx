@@ -2,25 +2,38 @@
 
 import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useToast } from "@/components/Toast";
+
+const BARCODE_PATTERN = /^DA-\d{8}-\d{5}$/;
 
 export default function ScannerPage() {
   const router = useRouter();
+  const { toast } = useToast();
   const [manualCode, setManualCode] = useState("");
   const [error, setError] = useState("");
+  const [notFound, setNotFound] = useState<string | null>(null);
   const [scanning, setScanning] = useState(false);
   const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
   const streamRef = useRef<MediaStream | null>(null);
 
   async function lookupBarcode(code: string) {
     setError("");
+    setNotFound(null);
+    const trimmed = code.trim();
+
+    if (!BARCODE_PATTERN.test(trimmed)) {
+      setError(`Invalid barcode format. Expected: DA-YYYYMMDD-XXXXX (e.g., DA-20260323-00001)`);
+      return;
+    }
+
     try {
-      const res = await fetch(`/api/items/barcode/${encodeURIComponent(code.trim())}`);
+      const res = await fetch(`/api/items/barcode/${encodeURIComponent(trimmed)}`);
       if (res.ok) {
         const item = await res.json();
+        toast(`Found: ${item.name}`);
         router.push(`/items/${item.id}`);
       } else {
-        setError(`No item found with barcode: ${code}`);
+        setNotFound(trimmed);
       }
     } catch {
       setError("Lookup failed. Please try again.");
@@ -34,6 +47,8 @@ export default function ScannerPage() {
 
   async function startCamera() {
     setScanning(true);
+    setError("");
+    setNotFound(null);
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { facingMode: "environment" },
@@ -57,7 +72,6 @@ export default function ScannerPage() {
     setScanning(false);
   }
 
-  // Capture frame for barcode detection using BarcodeDetector API (Chrome/Edge)
   useEffect(() => {
     if (!scanning) return;
 
@@ -67,15 +81,19 @@ export default function ScannerPage() {
 
       try {
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        const detector = new (window as any).BarcodeDetector({ formats: ["code_128", "code_39", "ean_13", "ean_8", "upc_a", "qr_code"] });
+        const detector = new (window as any).BarcodeDetector({ formats: ["code_128", "code_39"] });
         const barcodes = await detector.detect(videoRef.current);
         if (barcodes.length > 0 && active) {
-          stopCamera();
-          lookupBarcode(barcodes[0].rawValue);
-          return;
+          const value = barcodes[0].rawValue;
+          // Only accept our DA-format barcodes
+          if (BARCODE_PATTERN.test(value)) {
+            stopCamera();
+            lookupBarcode(value);
+            return;
+          }
         }
       } catch {
-        // BarcodeDetector not supported, fall through
+        // BarcodeDetector not supported
       }
 
       if (active) requestAnimationFrame(detect);
@@ -101,12 +119,16 @@ export default function ScannerPage() {
           <div className="space-y-3">
             <div className="relative bg-black rounded-lg overflow-hidden">
               <video ref={videoRef} className="w-full max-h-80 object-cover" playsInline muted />
-              <canvas ref={canvasRef} className="hidden" />
               <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
                 <div className="w-64 h-32 border-2 border-attic-400 rounded-lg" />
               </div>
+              <div className="absolute bottom-2 left-2 right-2 text-center">
+                <span className="bg-black/60 text-white text-xs px-2 py-1 rounded">
+                  Only Deb&apos;s Attic barcodes (DA-...) will be recognized
+                </span>
+              </div>
             </div>
-            <p className="text-sm text-gray-500">Point camera at barcode. Works best in Chrome/Edge.</p>
+            <p className="text-sm text-gray-500">Point camera at a DA-format barcode. Works best in Chrome/Edge.</p>
             <button onClick={stopCamera} className="btn-secondary">Stop Scanner</button>
           </div>
         ) : (
@@ -133,11 +155,33 @@ export default function ScannerPage() {
           />
           <button type="submit" className="btn-primary shrink-0">Look Up</button>
         </form>
+        <p className="text-xs text-gray-400">Only DA-format barcodes are accepted (DA-YYYYMMDD-XXXXX)</p>
       </div>
 
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
           {error}
+        </div>
+      )}
+
+      {/* Not found - offer to create */}
+      {notFound && (
+        <div className="card bg-yellow-50 border-yellow-200 space-y-3">
+          <p className="text-sm text-yellow-800">
+            No item found with barcode: <span className="font-mono font-medium">{notFound}</span>
+          </p>
+          <p className="text-sm text-yellow-700">Would you like to create a new item with this barcode?</p>
+          <div className="flex gap-2">
+            <button
+              onClick={() => router.push(`/items/new?barcode=${encodeURIComponent(notFound)}`)}
+              className="btn-primary text-sm"
+            >
+              Create New Item
+            </button>
+            <button onClick={() => setNotFound(null)} className="btn-secondary text-sm">
+              Dismiss
+            </button>
+          </div>
         </div>
       )}
     </div>
