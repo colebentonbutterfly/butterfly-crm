@@ -116,6 +116,7 @@ export async function POST(req: NextRequest) {
       photoUrls: data.photoUrls ? JSON.stringify(data.photoUrls) : null,
       notes: data.notes || null,
       boxNumber: data.boxNumber || null,
+      boxId: data.boxId || null,
       estimatedValue: data.estimatedValue ?? null,
       tags: data.tags ? JSON.stringify(data.tags) : null,
     },

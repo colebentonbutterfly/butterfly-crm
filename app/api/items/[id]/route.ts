@@ -47,6 +47,7 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
       photoUrls: data.photoUrls !== undefined ? JSON.stringify(data.photoUrls) : existing.photoUrls,
       notes: data.notes !== undefined ? data.notes : existing.notes,
       boxNumber: data.boxNumber !== undefined ? data.boxNumber : existing.boxNumber,
+      boxId: data.boxId !== undefined ? (data.boxId || null) : existing.boxId,
       estimatedValue: data.estimatedValue !== undefined ? data.estimatedValue : existing.estimatedValue,
       tags: data.tags !== undefined ? JSON.stringify(data.tags) : existing.tags,
     },

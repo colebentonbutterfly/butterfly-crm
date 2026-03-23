@@ -4,7 +4,8 @@ import { useState, useRef, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useToast } from "@/components/Toast";
 
-const BARCODE_PATTERN = /^DA-\d{8}-\d{5}$/;
+const ITEM_BARCODE_PATTERN = /^DA-\d{8}-\d{5}$/;
+const BOX_BARCODE_PATTERN = /^BOX-\d{4,}$/;
 
 export default function ScannerPage() {
   const router = useRouter();
@@ -21,8 +22,28 @@ export default function ScannerPage() {
     setNotFound(null);
     const trimmed = code.trim();
 
-    if (!BARCODE_PATTERN.test(trimmed)) {
-      setError(`Invalid barcode format. Expected: DA-YYYYMMDD-XXXXX (e.g., DA-20260323-00001)`);
+    // Check if it's a box barcode
+    if (BOX_BARCODE_PATTERN.test(trimmed)) {
+      try {
+        const res = await fetch(`/api/boxes/barcode/${encodeURIComponent(trimmed)}`);
+        if (res.ok) {
+          const box = await res.json();
+          toast(`Found: Box ${box.number}${box.name ? ` - ${box.name}` : ""}`);
+          router.push(`/boxes?pack=${box.id}`);
+          return;
+        } else {
+          setNotFound(trimmed);
+          return;
+        }
+      } catch {
+        setError("Lookup failed. Please try again.");
+        return;
+      }
+    }
+
+    // Check if it's an item barcode
+    if (!ITEM_BARCODE_PATTERN.test(trimmed)) {
+      setError(`Invalid barcode format. Expected: DA-YYYYMMDD-XXXXX (item) or BOX-XXXX (box)`);
       return;
     }
 
@@ -85,8 +106,8 @@ export default function ScannerPage() {
         const barcodes = await detector.detect(videoRef.current);
         if (barcodes.length > 0 && active) {
           const value = barcodes[0].rawValue;
-          // Only accept our DA-format barcodes
-          if (BARCODE_PATTERN.test(value)) {
+          // Accept DA-format item barcodes and BOX-format box barcodes
+          if (ITEM_BARCODE_PATTERN.test(value) || BOX_BARCODE_PATTERN.test(value)) {
             stopCamera();
             lookupBarcode(value);
             return;
@@ -124,11 +145,11 @@ export default function ScannerPage() {
               </div>
               <div className="absolute bottom-2 left-2 right-2 text-center">
                 <span className="bg-black/60 text-white text-xs px-2 py-1 rounded">
-                  Only Deb&apos;s Attic barcodes (DA-...) will be recognized
+                  Scans item barcodes (DA-...) and box barcodes (BOX-...)
                 </span>
               </div>
             </div>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Point camera at a DA-format barcode. Works best in Chrome/Edge.</p>
+            <p className="text-sm text-gray-500 dark:text-gray-400">Point camera at a barcode. Works best in Chrome/Edge.</p>
             <button onClick={stopCamera} className="btn-secondary">Stop Scanner</button>
           </div>
         ) : (
@@ -150,38 +171,47 @@ export default function ScannerPage() {
             type="text"
             value={manualCode}
             onChange={(e) => setManualCode(e.target.value)}
-            placeholder="Enter barcode (e.g., DA-20260323-00001)"
+            placeholder="Enter barcode (DA-... or BOX-...)"
             className="input-field flex-1"
           />
           <button type="submit" className="btn-primary shrink-0">Look Up</button>
         </form>
-        <p className="text-xs text-gray-400 dark:text-gray-500">Only DA-format barcodes are accepted (DA-YYYYMMDD-XXXXX)</p>
+        <p className="text-xs text-gray-400 dark:text-gray-500">
+          Item barcodes: DA-YYYYMMDD-XXXXX &middot; Box barcodes: BOX-XXXX
+        </p>
       </div>
 
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-4 py-3 text-sm">
+        <div className="bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300 rounded-lg px-4 py-3 text-sm">
           {error}
         </div>
       )}
 
       {/* Not found - offer to create */}
       {notFound && (
-        <div className="card bg-yellow-50 border-yellow-200 space-y-3">
-          <p className="text-sm text-yellow-800">
-            No item found with barcode: <span className="font-mono font-medium">{notFound}</span>
+        <div className="card bg-yellow-50 dark:bg-yellow-900/30 border-yellow-200 dark:border-yellow-800 space-y-3">
+          <p className="text-sm text-yellow-800 dark:text-yellow-200">
+            No {notFound.startsWith("BOX-") ? "box" : "item"} found with barcode: <span className="font-mono font-medium">{notFound}</span>
           </p>
-          <p className="text-sm text-yellow-700">Would you like to create a new item with this barcode?</p>
-          <div className="flex gap-2">
-            <button
-              onClick={() => router.push(`/items/new?barcode=${encodeURIComponent(notFound)}`)}
-              className="btn-primary text-sm"
-            >
-              Create New Item
-            </button>
-            <button onClick={() => setNotFound(null)} className="btn-secondary text-sm">
-              Dismiss
-            </button>
-          </div>
+          {notFound.startsWith("DA-") && (
+            <>
+              <p className="text-sm text-yellow-700 dark:text-yellow-300">Would you like to create a new item with this barcode?</p>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => router.push(`/items/new?barcode=${encodeURIComponent(notFound)}`)}
+                  className="btn-primary text-sm"
+                >
+                  Create New Item
+                </button>
+                <button onClick={() => setNotFound(null)} className="btn-secondary text-sm">Dismiss</button>
+              </div>
+            </>
+          )}
+          {notFound.startsWith("BOX-") && (
+            <div className="flex gap-2">
+              <button onClick={() => setNotFound(null)} className="btn-secondary text-sm">Dismiss</button>
+            </div>
+          )}
         </div>
       )}
     </div>

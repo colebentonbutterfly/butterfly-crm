@@ -13,6 +13,7 @@ export const createItemSchema = z.object({
   photoUrls: z.array(z.string().max(500)).max(20).optional().nullable(),
   notes: z.string().max(10000).optional().nullable(),
   boxNumber: z.string().max(100).optional().nullable(),
+  boxId: z.string().max(100).optional().nullable(),
   estimatedValue: z.number().min(0).max(99999999).optional().nullable(),
   tags: z.array(z.string().max(50)).max(20).optional().nullable(),
 });

@@ -13,7 +13,7 @@ function NewItemContent() {
       item={barcode ? {
         name: "", description: "", category: "Miscellaneous", location: "Pod 1",
         condition: "Good", quantity: 1, barcode, photoUrl: "", photoUrls: [],
-        notes: "", boxNumber: "", estimatedValue: null, tags: [],
+        notes: "", boxNumber: "", boxId: "", estimatedValue: null, tags: [],
       } : undefined}
     />
   );

@@ -11,6 +11,13 @@ interface TagOption {
   color: string;
 }
 
+interface BoxOption {
+  id: string;
+  number: number;
+  name: string | null;
+  barcode: string;
+}
+
 interface ItemData {
   id?: string;
   name: string;
@@ -24,6 +31,7 @@ interface ItemData {
   photoUrls: string[];
   notes: string;
   boxNumber: string;
+  boxId: string;
   estimatedValue: number | null;
   tags: string[];
 }
@@ -35,6 +43,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
   const [saving, setSaving] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const [availableBoxes, setAvailableBoxes] = useState<BoxOption[]>([]);
   const [duplicates, setDuplicates] = useState<{ id: string; name: string; location: string }[]>([]);
   const [form, setForm] = useState<ItemData>({
     name: item?.name || "",
@@ -48,6 +57,7 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     photoUrls: item?.photoUrls || [],
     notes: item?.notes || "",
     boxNumber: item?.boxNumber || "",
+    boxId: item?.boxId || "",
     estimatedValue: item?.estimatedValue ?? null,
     tags: item?.tags || [],
   });
@@ -60,9 +70,10 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
     ...form.photoUrls,
   ];
 
-  // Load available tags
+  // Load available tags and boxes
   useEffect(() => {
     fetch("/api/tags").then((r) => r.json()).then(setAvailableTags).catch(() => {});
+    fetch("/api/boxes").then((r) => r.json()).then((boxes: BoxOption[]) => setAvailableBoxes(boxes)).catch(() => {});
   }, []);
 
   // Duplicate detection (debounced)
@@ -257,15 +268,24 @@ export default function ItemForm({ item, isEdit }: { item?: ItemData; isEdit?: b
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Box / Group Number</label>
-            <input
-              type="text"
-              value={form.boxNumber}
-              onChange={(e) => set("boxNumber", e.target.value)}
-              className="input-field"
-              placeholder="e.g., Box 12, Pallet A"
-              maxLength={100}
-            />
+            <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Box / Group</label>
+            <select
+              value={form.boxId}
+              onChange={(e) => {
+                const boxId = e.target.value;
+                const box = availableBoxes.find((b) => b.id === boxId);
+                set("boxId", boxId);
+                set("boxNumber", box ? `Box ${box.number}${box.name ? ` - ${box.name}` : ""}` : "");
+              }}
+              className="select-field"
+            >
+              <option value="">No Box</option>
+              {availableBoxes.map((box) => (
+                <option key={box.id} value={box.id}>
+                  Box {box.number}{box.name ? ` - ${box.name}` : ""} ({box.barcode})
+                </option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-sm font-medium text-gray-700 dark:text-gray-200 mb-1">Barcode</label>

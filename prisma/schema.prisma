@@ -15,6 +15,18 @@ model User {
   createdAt      DateTime @default(now())
 }
 
+model Box {
+  id        String   @id @default(cuid())
+  number    Int      @unique
+  name      String?  // optional custom name like "Kitchen Stuff"
+  barcode   String   @unique
+  location  String   @default("Pod 1")
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  items     Item[]
+}
+
 model Item {
   id             String         @id @default(cuid())
   name           String
@@ -27,7 +39,9 @@ model Item {
   photoUrl       String?
   photoUrls      String?        // JSON array of additional photo URLs
   notes          String?
-  boxNumber      String?        // which box/group it's in
+  boxNumber      String?        // legacy text field for backward compat
+  boxId          String?        // relation to Box model
+  box            Box?           @relation(fields: [boxId], references: [id])
   estimatedValue Float?         // estimated dollar value
   tags           String?        // JSON array of tag strings
   createdAt      DateTime       @default(now())

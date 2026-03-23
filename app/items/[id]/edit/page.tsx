@@ -22,6 +22,7 @@ export default function EditItemPage() {
         photoUrls: data.photoUrls ? JSON.parse(data.photoUrls) : [],
         notes: data.notes || "",
         boxNumber: data.boxNumber || "",
+        boxId: data.boxId || "",
         estimatedValue: data.estimatedValue ?? null,
         tags: data.tags ? JSON.parse(data.tags) : [],
       }))
