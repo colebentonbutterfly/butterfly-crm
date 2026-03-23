@@ -32,7 +32,10 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Too many uploads" }, { status: 429 });
   }
 
-  const formData = await req.formData();
+  let formData;
+  try { formData = await req.formData(); } catch {
+    return NextResponse.json({ error: "Invalid form data" }, { status: 400 });
+  }
   const file = formData.get("file") as File | null;
 
   if (!file) {
@@ -64,15 +67,19 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "File content does not match an allowed image format" }, { status: 400 });
   }
 
-  const uploadDir = path.join(process.cwd(), "public", "uploads");
-  await mkdir(uploadDir, { recursive: true });
+  try {
+    const uploadDir = path.join(process.cwd(), "public", "uploads");
+    await mkdir(uploadDir, { recursive: true });
 
-  // Use detected type as extension for safety
-  const safeExt = ALLOWED_EXTENSIONS.has(ext) ? ext : detectedType;
-  const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
-  const filepath = path.join(uploadDir, filename);
+    // Use detected type as extension for safety
+    const safeExt = ALLOWED_EXTENSIONS.has(ext) ? ext : detectedType;
+    const filename = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${safeExt}`;
+    const filepath = path.join(uploadDir, filename);
 
-  await writeFile(filepath, buffer);
+    await writeFile(filepath, buffer);
 
-  return NextResponse.json({ url: `/uploads/${filename}` });
+    return NextResponse.json({ url: `/uploads/${filename}` });
+  } catch {
+    return NextResponse.json({ error: "Failed to save file" }, { status: 500 });
+  }
 }

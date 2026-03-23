@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import ItemForm from "@/components/ItemForm";
 import { SkeletonDetail } from "@/components/Skeleton";
+import { safeJsonParse } from "@/lib/helpers";
 
 export default function EditItemPage() {
   const params = useParams();
@@ -19,18 +20,18 @@ export default function EditItemPage() {
         description: data.description || "",
         condition: data.condition || "Good",
         photoUrl: data.photoUrl || "",
-        photoUrls: data.photoUrls ? JSON.parse(data.photoUrls) : [],
+        photoUrls: safeJsonParse(data.photoUrls, []),
         notes: data.notes || "",
         boxNumber: data.boxNumber || "",
         boxId: data.boxId || "",
         estimatedValue: data.estimatedValue ?? null,
-        tags: data.tags ? JSON.parse(data.tags) : [],
+        tags: safeJsonParse(data.tags, []),
       }))
       .finally(() => setLoading(false));
   }, [params.id]);
 
   if (loading) return <SkeletonDetail />;
-  if (!item) return <p>Item not found.</p>;
+  if (!item) return <p className="text-gray-600 dark:text-gray-400 text-center py-12">Item not found.</p>;
 
   return (
     <div className="space-y-4 mt-2">

@@ -57,7 +57,7 @@ export default function ActivityPage() {
         </div>
       ) : logs.length === 0 ? (
         <div className="card text-center py-12">
-          <p className="text-gray-400">No activity yet</p>
+          <p className="text-gray-400 dark:text-gray-500">No activity yet</p>
         </div>
       ) : (
         <div className="space-y-2">

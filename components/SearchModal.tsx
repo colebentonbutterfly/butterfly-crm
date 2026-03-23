@@ -34,7 +34,7 @@ export default function SearchModal({ open, onClose }: { open: boolean; onClose:
     setLoading(true);
     fetch(`/api/items?search=${encodeURIComponent(q)}`)
       .then((r) => r.json())
-      .then((items) => { setResults(items.slice(0, 8)); setSelected(0); })
+      .then((data) => { setResults((data.items || data).slice(0, 8)); setSelected(0); })
       .finally(() => setLoading(false));
   }, []);
 
@@ -72,7 +72,7 @@ export default function SearchModal({ open, onClose }: { open: boolean; onClose:
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Search items, barcodes, boxes..."
-            className="flex-1 text-sm outline-none bg-transparent"
+            className="flex-1 text-sm outline-none bg-transparent dark:text-gray-100"
           />
           <kbd className="hidden sm:inline-block text-xs text-gray-400 bg-gray-100 dark:bg-gray-700 px-1.5 py-0.5 rounded">ESC</kbd>
         </div>

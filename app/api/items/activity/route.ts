@@ -8,8 +8,8 @@ export async function GET(req: NextRequest) {
 
   const url = req.nextUrl;
   const itemId = url.searchParams.get("itemId") || undefined;
-  const page = parseInt(url.searchParams.get("page") || "1");
-  const limit = Math.min(parseInt(url.searchParams.get("limit") || "50"), 200);
+  const page = Math.max(1, parseInt(url.searchParams.get("page") || "1") || 1);
+  const limit = Math.min(Math.max(1, parseInt(url.searchParams.get("limit") || "50") || 50), 200);
 
   const where: Record<string, unknown> = {};
   if (itemId) where.itemId = itemId;

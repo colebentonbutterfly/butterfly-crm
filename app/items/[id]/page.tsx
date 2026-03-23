@@ -6,6 +6,7 @@ import Link from "next/link";
 import LocationBadge from "@/components/LocationBadge";
 import { SkeletonDetail } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
+import { safeJsonParse } from "@/lib/helpers";
 
 interface Item {
   id: string;
@@ -55,10 +56,10 @@ export default function ItemDetailPage() {
 
   const allPhotos: string[] = item ? [
     ...(item.photoUrl ? [item.photoUrl] : []),
-    ...(item.photoUrls ? JSON.parse(item.photoUrls) : []),
+    ...safeJsonParse<string[]>(item.photoUrls, []),
   ] : [];
 
-  const itemTags: string[] = item?.tags ? JSON.parse(item.tags) : [];
+  const itemTags: string[] = safeJsonParse<string[]>(item?.tags, []);
 
   useEffect(() => {
     fetch(`/api/items/${params.id}`)

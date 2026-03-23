@@ -6,6 +6,7 @@ import { CATEGORIES, LOCATIONS } from "@/lib/categories";
 import LocationBadge from "@/components/LocationBadge";
 import { SkeletonCard, SkeletonGrid } from "@/components/Skeleton";
 import { useToast } from "@/components/Toast";
+import { safeJsonParse } from "@/lib/helpers";
 
 interface Item {
   id: string;
@@ -146,7 +147,7 @@ export default function InventoryPage() {
         item.estimatedValue ?? "",
         (item.description || "").replace(/"/g, '""'),
         (item.notes || "").replace(/"/g, '""'),
-        item.tags ? JSON.parse(item.tags).join("; ") : "",
+        item.tags ? safeJsonParse<string[]>(item.tags, []).join("; ") : "",
         new Date(item.createdAt).toLocaleDateString(),
         new Date(item.updatedAt).toLocaleDateString(),
       ]);
@@ -304,7 +305,7 @@ export default function InventoryPage() {
             <div className="col-span-2">Barcode</div>
           </div>
           {items.map((item) => {
-            const tags: string[] = item.tags ? JSON.parse(item.tags) : [];
+            const tags: string[] = item.tags ? safeJsonParse<string[]>(item.tags, []) : [];
             return (
               <div key={item.id} className="card block hover:shadow-md transition-shadow">
                 <div className="flex items-center gap-4">

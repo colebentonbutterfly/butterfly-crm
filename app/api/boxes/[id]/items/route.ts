@@ -16,10 +16,17 @@ export async function POST(req: NextRequest, { params }: { params: { id: string 
   const box = await prisma.box.findUnique({ where: { id: params.id } });
   if (!box) return NextResponse.json({ error: "Box not found" }, { status: 404 });
 
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = assignItemSchema.safeParse(body);
   if (!parsed.success) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 });
+  }
+
+  if (!parsed.data.itemId && !parsed.data.barcode) {
+    return NextResponse.json({ error: "Either itemId or barcode is required" }, { status: 400 });
   }
 
   let item;
@@ -60,7 +67,10 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
   const { error: authError, session } = await requireAuth();
   if (authError) return authError;
 
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const itemId = body.itemId;
   if (!itemId) return NextResponse.json({ error: "itemId required" }, { status: 400 });
 

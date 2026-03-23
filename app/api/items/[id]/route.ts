@@ -25,10 +25,13 @@ export async function PUT(req: NextRequest, { params }: { params: { id: string }
   const existing = await prisma.item.findUnique({ where: { id: params.id } });
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = updateItemSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Validation error" }, { status: 400 });
   }
 
   const data = parsed.data;

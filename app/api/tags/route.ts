@@ -20,10 +20,13 @@ export async function POST(req: NextRequest) {
   const { error: authError } = await requireAuth();
   if (authError) return authError;
 
-  const body = await req.json();
+  let body;
+  try { body = await req.json(); } catch {
+    return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
   const parsed = tagSchema.safeParse(body);
   if (!parsed.success) {
-    return NextResponse.json({ error: parsed.error.issues[0].message }, { status: 400 });
+    return NextResponse.json({ error: parsed.error.issues[0]?.message || "Validation error" }, { status: 400 });
   }
 
   const tag = await prisma.tag.create({ data: parsed.data });

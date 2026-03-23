@@ -1,0 +1,21 @@
+version: "3.8"
+
+services:
+  app:
+    build: .
+    ports:
+      - "3000:3000"
+    environment:
+      - NEXTAUTH_SECRET=${NEXTAUTH_SECRET}
+      - NEXTAUTH_URL=${NEXTAUTH_URL:-http://localhost:3000}
+      - EBAY_APP_ID=${EBAY_APP_ID:-}
+      - EBAY_CERT_ID=${EBAY_CERT_ID:-}
+    volumes:
+      # Persist database and uploads between container restarts
+      - db-data:/app/prisma
+      - uploads:/app/public/uploads
+    restart: unless-stopped
+
+volumes:
+  db-data:
+  uploads:

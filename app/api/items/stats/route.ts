@@ -1,10 +1,16 @@
 import { prisma } from "@/lib/prisma";
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { requireAuth } from "@/lib/api-auth";
+import { rateLimit } from "@/lib/rate-limit";
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   const { error: authError } = await requireAuth();
   if (authError) return authError;
+
+  const ip = req.headers.get("x-forwarded-for") || "anonymous";
+  if (!rateLimit(`stats-${ip}`, 60)) {
+    return NextResponse.json({ error: "Too many requests" }, { status: 429 });
+  }
 
   const [total, pod1, pod2, container, donated, trash, categories] = await Promise.all([
     prisma.item.count(),
