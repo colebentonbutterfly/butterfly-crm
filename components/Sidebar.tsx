@@ -5,6 +5,7 @@ import { usePathname } from "next/navigation";
 import { useState } from "react";
 import { signOut, useSession } from "next-auth/react";
 import ThemeToggle from "./ThemeToggle";
+import Logo, { IconLogo } from "./Logo";
 
 const NAV_ITEMS = [
   { href: "/", label: "Dashboard", icon: "M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-4 0a1 1 0 01-1-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 01-1 1" },
@@ -25,12 +26,14 @@ export default function Sidebar() {
   return (
     <>
       {/* Mobile header - iOS safe area aware */}
-      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-attic-800 text-white flex items-center justify-between px-4 py-3"
-        style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 12px)" }}
+      <div className="md:hidden fixed top-0 left-0 right-0 z-30 bg-attic-800 text-white flex items-center justify-between px-4 py-2"
+        style={{ paddingTop: "max(env(safe-area-inset-top, 0px), 8px)" }}
       >
         <div className="flex items-center gap-2">
-          <AtticLogo size={28} />
-          <span className="font-bold text-lg">Deb&apos;s Attic</span>
+          <IconLogo className="w-7 h-8 shrink-0" />
+          <span className="font-bold text-lg" style={{ fontFamily: "Georgia, 'Palatino Linotype', serif" }}>
+            Deb&apos;s Attic
+          </span>
         </div>
         <button onClick={() => setOpen(!open)} className="p-2 -mr-2 min-w-[44px] min-h-[44px] flex items-center justify-center">
           <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -47,14 +50,8 @@ export default function Sidebar() {
         className={`fixed top-0 left-0 h-full w-64 bg-attic-800 text-white z-40 transform transition-transform duration-200 ${open ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 overflow-y-auto overscroll-contain`}
         style={{ paddingTop: "env(safe-area-inset-top, 0px)" }}
       >
-        <div className="p-6 border-b border-attic-700">
-          <div className="flex items-center gap-3">
-            <AtticLogo size={40} />
-            <div>
-              <h1 className="font-bold text-xl">Deb&apos;s Attic</h1>
-              <p className="text-attic-300 text-xs">Estate Inventory</p>
-            </div>
-          </div>
+        <div className="p-5 border-b border-attic-700">
+          <Logo variant="header" />
         </div>
         <nav className="p-4 space-y-1">
           {NAV_ITEMS.map((item) => {
@@ -93,7 +90,9 @@ export default function Sidebar() {
             </div>
           )}
           <div className="flex items-center justify-between">
-            <p className="text-attic-400 text-xs">2 Pods → 1 Container</p>
+            <p className="text-attic-400 text-xs italic" style={{ fontFamily: "Georgia, 'Palatino Linotype', serif", letterSpacing: "0.5px" }}>
+              Every item tells a story
+            </p>
             <ThemeToggle />
           </div>
         </div>
@@ -104,27 +103,3 @@ export default function Sidebar() {
     </>
   );
 }
-
-// Deb's Attic Logo Component - SVG house/attic icon with DA monogram
-function AtticLogo({ size = 40 }: { size?: number }) {
-  return (
-    <svg width={size} height={size} viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-      {/* Background rounded square */}
-      <rect width="40" height="40" rx="8" fill="#c46224" />
-      {/* House/attic roof */}
-      <path d="M20 6L6 18H10V32H30V18H34L20 6Z" fill="#78350f" stroke="#fdf8f0" strokeWidth="0.5" />
-      {/* Attic window/triangle */}
-      <path d="M20 8L10 17H30L20 8Z" fill="#d47a2e" />
-      {/* Door */}
-      <rect x="16" y="22" width="8" height="10" rx="1" fill="#fdf8f0" opacity="0.9" />
-      {/* Window left */}
-      <rect x="11" y="19" width="4" height="4" rx="0.5" fill="#fdf8f0" opacity="0.7" />
-      {/* Window right */}
-      <rect x="25" y="19" width="4" height="4" rx="0.5" fill="#fdf8f0" opacity="0.7" />
-      {/* DA text */}
-      <text x="20" y="29" fontSize="7" textAnchor="middle" fill="#78350f" fontWeight="bold" fontFamily="sans-serif">DA</text>
-    </svg>
-  );
-}
-
-export { AtticLogo };

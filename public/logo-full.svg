@@ -1,0 +1,188 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 610" width="600" height="610">
+  <defs>
+    <linearGradient id="bgGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#faf5ef;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#f0e6d8;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="roseGold" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4a878;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#b8865c;stop-opacity:1"/>
+    </linearGradient>
+    <linearGradient id="lavGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#c8b4d0;stop-opacity:1"/>
+      <stop offset="100%" style="stop-color:#a890b8;stop-opacity:1"/>
+    </linearGradient>
+    <radialGradient id="candleGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#fff8c0;stop-opacity:0.9"/>
+      <stop offset="55%" style="stop-color:#f4c060;stop-opacity:0.28"/>
+      <stop offset="100%" style="stop-color:#f4c060;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="warmAura" cx="50%" cy="40%" r="60%">
+      <stop offset="0%" style="stop-color:#fff8e8;stop-opacity:0.5"/>
+      <stop offset="100%" style="stop-color:#faf5ef;stop-opacity:0"/>
+    </radialGradient>
+    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+      <stop offset="0%" style="stop-color:#faf5ef;stop-opacity:0"/>
+      <stop offset="100%" style="stop-color:#b89878;stop-opacity:0.14"/>
+    </radialGradient>
+    <filter id="softShadow">
+      <feDropShadow dx="1" dy="2" stdDeviation="3" flood-color="#7a5a40" flood-opacity="0.16"/>
+    </filter>
+    <filter id="flameGlow" x="-120%" y="-120%" width="340%" height="340%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge>
+        <feMergeNode in="blur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <clipPath id="ovalClip">
+      <ellipse cx="300" cy="370" rx="88" ry="108"/>
+    </clipPath>
+  </defs>
+
+  <!-- BACKGROUND -->
+  <rect width="600" height="610" fill="url(#bgGrad)" rx="20"/>
+  <rect width="600" height="610" fill="url(#vignette)" rx="20"/>
+
+  <!-- BORDERS -->
+  <rect x="14" y="14" width="572" height="582" rx="14" fill="none" stroke="#c8a888" stroke-width="1.4" opacity="0.52"/>
+  <rect x="24" y="24" width="552" height="562" rx="10" fill="none" stroke="#c8a888" stroke-width="0.5" opacity="0.28"/>
+
+  <!-- CORNER ORNAMENTS -->
+  <g opacity="0.48" stroke="#c8a888" stroke-width="0.9" fill="#c8b4d0">
+    <circle cx="36" cy="36" r="4"/>
+    <line x1="40" y1="36" x2="56" y2="36"/>
+    <line x1="36" y1="40" x2="36" y2="56"/>
+    <circle cx="564" cy="36" r="4"/>
+    <line x1="560" y1="36" x2="544" y2="36"/>
+    <line x1="564" y1="40" x2="564" y2="56"/>
+    <circle cx="36" cy="574" r="4"/>
+    <line x1="40" y1="574" x2="56" y2="574"/>
+    <line x1="36" y1="570" x2="36" y2="554"/>
+    <circle cx="564" cy="574" r="4"/>
+    <line x1="560" y1="574" x2="544" y2="574"/>
+    <line x1="564" y1="570" x2="564" y2="554"/>
+  </g>
+
+  <!-- ZONE A — HEADER TYPOGRAPHY -->
+  <path d="M 178,46 Q 239,34 300,40 Q 361,34 422,46" fill="none" stroke="#c8a888" stroke-width="1" opacity="0.42"/>
+  <text x="300" y="108" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', serif" font-size="62" font-style="italic" font-weight="400" fill="#8a5850" letter-spacing="2" opacity="0.93">Deb's</text>
+  <line x1="182" y1="122" x2="418" y2="122" stroke="#c8a888" stroke-width="0.7" opacity="0.38"/>
+  <text x="300" y="168" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', serif" font-size="48" font-weight="700" fill="#4a3428" letter-spacing="18" opacity="0.95">ATTIC</text>
+
+  <!-- Diamond divider -->
+  <line x1="112" y1="184" x2="266" y2="184" stroke="#c8a888" stroke-width="1" opacity="0.52"/>
+  <polygon points="300,177 309,184 300,191 291,184" fill="#d4a878" opacity="0.65"/>
+  <line x1="334" y1="184" x2="488" y2="184" stroke="#c8a888" stroke-width="1" opacity="0.52"/>
+
+  <text x="300" y="204" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', serif" font-size="11.5" font-style="italic" fill="#8a7060" letter-spacing="4" opacity="0.78">Estate &amp; Personal Property Inventory</text>
+
+  <!-- ZONE B — CENTRAL LOCKET -->
+  <ellipse cx="300" cy="370" rx="132" ry="150" fill="url(#warmAura)"/>
+
+  <!-- Chain connector -->
+  <path d="M 288,240 Q 300,232 312,240" fill="none" stroke="#d4a878" stroke-width="1.4" opacity="0.48"/>
+  <line x1="300" y1="232" x2="300" y2="236" stroke="#d4a878" stroke-width="2" stroke-linecap="round" opacity="0.55"/>
+  <circle cx="300" cy="230" r="5" fill="#d4a878" opacity="0.48"/>
+
+  <!-- Hinge cap -->
+  <rect x="291" y="244" width="18" height="10" rx="5" fill="#d4a878" opacity="0.62"/>
+
+  <!-- Locket frame -->
+  <ellipse cx="300" cy="370" rx="94" ry="114" fill="url(#roseGold)" opacity="0.52" filter="url(#softShadow)"/>
+  <ellipse cx="300" cy="370" rx="88" ry="108" fill="#fdf8f2"/>
+  <ellipse cx="300" cy="370" rx="83" ry="103" fill="none" stroke="#d4a878" stroke-width="1" opacity="0.38"/>
+  <ellipse cx="300" cy="370" rx="78" ry="97" fill="none" stroke="#e8c898" stroke-width="0.5" stroke-dasharray="2,4" opacity="0.45"/>
+
+  <!-- Interior scene (clipped) -->
+  <g clip-path="url(#ovalClip)">
+    <rect x="212" y="262" width="176" height="216" fill="#fdf4ec"/>
+    <polygon points="212,324 300,266 388,324" fill="#ecdcc8" opacity="0.52"/>
+
+    <!-- Attic window -->
+    <polygon points="276,304 300,276 324,304 318,320 282,320" fill="#fff8e0" opacity="0.88"/>
+    <line x1="300" y1="276" x2="300" y2="320" stroke="#c8a888" stroke-width="0.8" opacity="0.38"/>
+    <line x1="276" y1="298" x2="324" y2="298" stroke="#c8a888" stroke-width="0.8" opacity="0.38"/>
+    <ellipse cx="300" cy="298" rx="18" ry="16" fill="#fff8e0" opacity="0.32"/>
+
+    <!-- Candle -->
+    <ellipse cx="300" cy="424" rx="48" ry="26" fill="url(#candleGlow)" opacity="0.92"/>
+    <ellipse cx="300" cy="440" rx="18" ry="5.5" fill="#d4a878" opacity="0.82"/>
+    <rect x="294" y="406" width="12" height="35" rx="3" fill="#f5eedd"/>
+    <line x1="294" y1="416" x2="306" y2="416" stroke="#ede0cc" stroke-width="1" opacity="0.5"/>
+    <line x1="294" y1="424" x2="306" y2="424" stroke="#ede0cc" stroke-width="1" opacity="0.5"/>
+    <line x1="294" y1="432" x2="306" y2="432" stroke="#ede0cc" stroke-width="1" opacity="0.5"/>
+    <line x1="300" y1="406" x2="300" y2="398" stroke="#4a3020" stroke-width="1.3"/>
+    <ellipse cx="300" cy="387" rx="7" ry="12" fill="#fff4a0" opacity="0.55" filter="url(#flameGlow)"/>
+    <ellipse cx="300" cy="390" rx="4.5" ry="9" fill="#ffe050"/>
+    <ellipse cx="300" cy="394" rx="2.5" ry="5" fill="#ff9020" opacity="0.82"/>
+    <ellipse cx="300" cy="396" rx="1.5" ry="2.5" fill="#ff6010" opacity="0.62"/>
+
+    <!-- Rose bloom -->
+    <g transform="translate(238, 390)">
+      <path d="M 12,50 Q 8,32 10,14 Q 11,6 13,0" fill="none" stroke="#7a9474" stroke-width="1.6" stroke-linecap="round"/>
+      <ellipse cx="6" cy="28" rx="9" ry="3.5" fill="#9aad94" transform="rotate(-38,6,28)"/>
+      <ellipse cx="17" cy="16" rx="7.5" ry="3" fill="#9aad94" transform="rotate(28,17,16)"/>
+      <circle cx="13" cy="3" r="10" fill="#d4a0b4" opacity="0.60"/>
+      <circle cx="20" cy="-1" r="8.5" fill="#e0b8c4" opacity="0.68"/>
+      <circle cx="6" cy="-1" r="8.5" fill="#e0b8c4" opacity="0.68"/>
+      <circle cx="13" cy="-6" r="8" fill="#d4a0b4" opacity="0.75"/>
+      <circle cx="13" cy="0" r="4.5" fill="#c07888" opacity="0.78"/>
+    </g>
+
+    <!-- Antique key -->
+    <g transform="translate(328, 392)">
+      <circle cx="12" cy="12" r="11" fill="none" stroke="#d4a878" stroke-width="3.2"/>
+      <circle cx="12" cy="12" r="5" fill="none" stroke="#d4a878" stroke-width="1.6"/>
+      <rect x="10" y="22" width="5" height="30" rx="2.5" fill="#d4a878"/>
+      <rect x="15" y="33" width="9" height="4" rx="1.5" fill="#d4a878"/>
+      <rect x="15" y="41" width="7" height="4" rx="1.5" fill="#d4a878"/>
+    </g>
+
+    <!-- Ambient dots -->
+    <circle cx="236" cy="336" r="2.5" fill="#d4a0b4" opacity="0.32"/>
+    <circle cx="364" cy="344" r="2.5" fill="#d4a0b4" opacity="0.28"/>
+    <circle cx="230" cy="374" r="2" fill="#c8b4d0" opacity="0.32"/>
+    <circle cx="370" cy="380" r="2" fill="#c8b4d0" opacity="0.28"/>
+  </g>
+
+  <!-- FLANKING LAVENDER SPRIGS -->
+  <g transform="translate(80, 268)" opacity="0.70">
+    <path d="M 18,160 Q 16,110 18,60 Q 19,28 20,0" fill="none" stroke="#9aad94" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 18,112 Q 5,96 2,80" fill="none" stroke="#9aad94" stroke-width="1.3"/>
+    <path d="M 18,112 Q 31,96 34,80" fill="none" stroke="#9aad94" stroke-width="1.3"/>
+    <path d="M 18,138 Q 7,122 4,106" fill="none" stroke="#9aad94" stroke-width="1.2"/>
+    <path d="M 18,138 Q 29,122 32,106" fill="none" stroke="#9aad94" stroke-width="1.2"/>
+    <ellipse cx="20" cy="0" rx="5" ry="9" fill="url(#lavGrad)" opacity="0.82"/>
+    <ellipse cx="16" cy="12" rx="4.5" ry="7.5" fill="url(#lavGrad)" opacity="0.74"/>
+    <ellipse cx="22" cy="22" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.66"/>
+    <ellipse cx="2" cy="80" rx="4" ry="7.5" fill="url(#lavGrad)" opacity="0.72"/>
+    <ellipse cx="34" cy="80" rx="4" ry="7.5" fill="url(#lavGrad)" opacity="0.72"/>
+    <ellipse cx="4" cy="106" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.65"/>
+    <ellipse cx="32" cy="106" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.65"/>
+  </g>
+
+  <g transform="translate(520, 268) scale(-1,1) translate(-36,0)" opacity="0.70">
+    <path d="M 18,160 Q 16,110 18,60 Q 19,28 20,0" fill="none" stroke="#9aad94" stroke-width="2" stroke-linecap="round"/>
+    <path d="M 18,112 Q 5,96 2,80" fill="none" stroke="#9aad94" stroke-width="1.3"/>
+    <path d="M 18,112 Q 31,96 34,80" fill="none" stroke="#9aad94" stroke-width="1.3"/>
+    <path d="M 18,138 Q 7,122 4,106" fill="none" stroke="#9aad94" stroke-width="1.2"/>
+    <path d="M 18,138 Q 29,122 32,106" fill="none" stroke="#9aad94" stroke-width="1.2"/>
+    <ellipse cx="20" cy="0" rx="5" ry="9" fill="url(#lavGrad)" opacity="0.82"/>
+    <ellipse cx="16" cy="12" rx="4.5" ry="7.5" fill="url(#lavGrad)" opacity="0.74"/>
+    <ellipse cx="22" cy="22" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.66"/>
+    <ellipse cx="2" cy="80" rx="4" ry="7.5" fill="url(#lavGrad)" opacity="0.72"/>
+    <ellipse cx="34" cy="80" rx="4" ry="7.5" fill="url(#lavGrad)" opacity="0.72"/>
+    <ellipse cx="4" cy="106" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.65"/>
+    <ellipse cx="32" cy="106" rx="4" ry="6.5" fill="url(#lavGrad)" opacity="0.65"/>
+  </g>
+
+  <!-- ZONE C — BOTTOM SLOGAN -->
+  <line x1="112" y1="514" x2="238" y2="514" stroke="#c8a888" stroke-width="0.8" opacity="0.44"/>
+  <circle cx="252" cy="514" r="2.5" fill="#c8b4d0" opacity="0.52"/>
+  <circle cx="300" cy="514" r="3.2" fill="#d4a878" opacity="0.58"/>
+  <circle cx="348" cy="514" r="2.5" fill="#c8b4d0" opacity="0.52"/>
+  <line x1="362" y1="514" x2="488" y2="514" stroke="#c8a888" stroke-width="0.8" opacity="0.44"/>
+
+  <text x="300" y="540" text-anchor="middle" font-family="Georgia, 'Palatino Linotype', serif" font-size="13" font-style="italic" fill="#9a8070" letter-spacing="3" opacity="0.74">Every item tells a story</text>
+</svg>

@@ -3,7 +3,7 @@
 import { signIn } from "next-auth/react";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { AtticLogo } from "@/components/Sidebar";
+import Logo from "@/components/Logo";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -35,12 +35,8 @@ export default function LoginPage() {
   return (
     <div className="min-h-[100dvh] bg-attic-50 dark:bg-gray-900 flex items-center justify-center p-4">
       <div className="w-full max-w-sm">
-        <div className="text-center mb-8">
-          <div className="inline-block">
-            <AtticLogo size={72} />
-          </div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-4">Deb&apos;s Attic</h1>
-          <p className="text-gray-500 dark:text-gray-400 text-sm mt-1">Estate Inventory Management</p>
+        <div className="mb-6">
+          <Logo variant="full" />
         </div>
 
         <form onSubmit={handleSubmit} className="card space-y-4">
