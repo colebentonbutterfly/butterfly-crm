@@ -1,0 +1,10 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --ba-purple: 91 44 131;
+  --ba-gold: 201 162 39;
+}
+
+html, body { height: 100%; }

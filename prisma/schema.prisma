@@ -1,0 +1,192 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  OWNER
+  ACQUISITIONS
+  ADMIN
+  ASSET_MANAGER
+  READ_ONLY
+}
+
+enum DealType {
+  SUBJECT_TO
+  CASH
+  HYBRID
+}
+
+enum LeadStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  OFFER_PRESENTED
+  UNDER_CONTRACT
+  CLOSING_SCHEDULED
+  CLOSED_POST_CLOSE
+  DEAD
+}
+
+enum AssetStatus {
+  RECENTLY_CLOSED
+  PAYMENT_VERIFIED
+  INSURANCE_VERIFIED
+  STABILIZED
+  PERFORMING
+  AT_RISK
+  RESOLVED_EXIT
+}
+
+model User {
+  id        String   @id @default(cuid())
+  name      String?
+  email     String   @unique
+  password  String
+  role      Role     @default(ACQUISITIONS)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  tasks      Task[]
+}
+
+model Seller {
+  id            String   @id @default(cuid())
+  fullName      String
+  phone         String?
+  email         String?
+  mailingAddr   String?
+  occupancy     String?
+  creditFocus   String? // low/med/high
+  attorneyFlag  Boolean  @default(false)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  leads         Lead[]
+  deals         Deal[]
+  documents     Document[]
+}
+
+model Property {
+  id            String   @id @default(cuid())
+  address1      String
+  city          String
+  state         String
+  zip           String
+  county        String?
+  propertyType  String?
+  beds          Int?
+  baths         Float?
+  estValue      Int?
+  loanType      String?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  leads         Lead[]
+  deals         Deal[]
+  assets        Asset[]
+  documents     Document[]
+}
+
+model Lead {
+  id              String     @id @default(cuid())
+  source          String?
+  foreclosureFlag Boolean    @default(false)
+  noticeReceived  Boolean    @default(false)
+  saleDate        DateTime?
+  urgency         Int        @default(3) // 1-5
+  status          LeadStatus @default(NEW)
+
+  sellerId        String
+  seller          Seller     @relation(fields: [sellerId], references: [id])
+
+  propertyId      String
+  property        Property   @relation(fields: [propertyId], references: [id])
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model Deal {
+  id             String     @id @default(cuid())
+  dealType       DealType
+  status         LeadStatus @default(QUALIFIED)
+  purchasePrice  Int?
+  loanBalance    Int?
+  monthlyPayment Int?
+  exitStrategy   String?
+  closingDate    DateTime?
+  titleCompany   String?
+
+  sellerId       String
+  seller         Seller     @relation(fields: [sellerId], references: [id])
+
+  propertyId     String
+  property       Property   @relation(fields: [propertyId], references: [id])
+
+  tasks          Task[]
+  documents      Document[]
+  asset          Asset?
+
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+model Asset {
+  id            String      @id @default(cuid())
+  status        AssetStatus @default(RECENTLY_CLOSED)
+  servicing     String?
+  insurance     String?
+  firstPayDate  DateTime?
+  lastPayCheck  DateTime?
+
+  dealId        String @unique
+  deal          Deal   @relation(fields: [dealId], references: [id])
+
+  propertyId    String
+  property      Property @relation(fields: [propertyId], references: [id])
+
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model Task {
+  id           String     @id @default(cuid())
+  title        String
+  required     Boolean    @default(true)
+  completed    Boolean    @default(false)
+  dueDate      DateTime?
+  stage        LeadStatus
+  dealId       String
+  deal         Deal       @relation(fields: [dealId], references: [id])
+
+  assignedToId String?
+  assignedTo   User?      @relation(fields: [assignedToId], references: [id])
+
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model Document {
+  id          String   @id @default(cuid())
+  name        String
+  url         String
+  docType     String
+  signed      Boolean  @default(false)
+
+  sellerId    String?
+  seller      Seller?  @relation(fields: [sellerId], references: [id])
+
+  propertyId  String?
+  property    Property? @relation(fields: [propertyId], references: [id])
+
+  dealId      String?
+  deal        Deal?    @relation(fields: [dealId], references: [id])
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
