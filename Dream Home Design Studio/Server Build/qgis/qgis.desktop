@@ -1,0 +1,9 @@
+[Desktop Entry]
+Type=Application
+Name=QGIS
+Comment=Maps, lot lines and site plans
+Exec=qgis
+Icon=qgis
+Terminal=false
+Categories=Education;Science;Geography;
+X-GNOME-Autostart-enabled=true

@@ -1,0 +1,105 @@
+# Design Studio on CT 136. Everything listens on 127.0.0.1 only;
+# `tailscale serve` (set up by "2 build studio.sh") publishes it over HTTPS
+# on the tailnet:
+#
+#   https://STUDIO_HOST/            floorplans  -> 127.0.0.1:8080
+#   https://STUDIO_HOST:8443/       freecad     -> 127.0.0.1:3100
+#   https://STUDIO_HOST:8444/       blender     -> 127.0.0.1:3200
+#   https://STUDIO_HOST:8445/       qgis        -> 127.0.0.1:3300
+#
+# Project files: /srv/design-studio (bind mount from the Proxmox host).
+# App settings:  /opt/design-studio/data/<app> (inside CT 136, covered by vzdump).
+#
+# Never run `docker compose down -v`.
+
+name: design-studio
+
+x-desktop: &desktop
+  restart: unless-stopped
+  shm_size: "1gb"
+  security_opt:
+    - seccomp=unconfined
+  # GPU (phase 5). After passing /dev/dri into CT 136, uncomment on each
+  # desktop, then `docker compose up -d`.
+  # devices:
+  #   - /dev/dri:/dev/dri
+
+x-desktop-env: &desktop-env
+  PUID: "33"
+  PGID: "33"
+  TZ: ${TZ:-America/New_York}
+  CUSTOM_USER: ${DESKTOP_USER:?run 2 build studio.sh to create .env}
+  PASSWORD: ${DESKTOP_PASSWORD:?run 2 build studio.sh to create .env}
+  # Set to true by "2 build studio.sh" when CT 136 has no IPv6; otherwise
+  # the desktops' web server fails to bind [::]:3000.
+  DISABLE_IPV6: ${DISABLE_IPV6:-}
+
+services:
+  floorplans:
+    build: ./floorplans
+    image: design-studio/floorplans:7.5.2
+    restart: unless-stopped
+    user: "33:33"
+    environment:
+      STUDIO_HOST: ${STUDIO_HOST:?STUDIO_HOST must be set in .env}
+      STUDIO_PORT: ${STUDIO_PORT:-443}
+      FREECAD_PORT: ${FREECAD_PORT:-8443}
+      BLENDER_PORT: ${BLENDER_PORT:-8444}
+      QGIS_PORT: ${QGIS_PORT:-8445}
+      DRIVE_URL: ${DRIVE_URL:-}
+      TZ: ${TZ:-America/New_York}
+    volumes:
+      - /srv/design-studio:/data
+    ports:
+      - "127.0.0.1:8080:8080"
+    mem_limit: 1g
+
+  freecad:
+    <<: *desktop
+    image: lscr.io/linuxserver/freecad:latest
+    environment:
+      <<: *desktop-env
+      TITLE: FreeCAD
+    volumes:
+      - ./data/freecad:/config
+      - /srv/design-studio:/config/Design Studio
+    ports:
+      - "127.0.0.1:3100:3000"
+
+  blender:
+    <<: *desktop
+    image: lscr.io/linuxserver/blender:latest
+    environment:
+      <<: *desktop-env
+      TITLE: Blender
+    volumes:
+      - ./data/blender:/config
+      - /srv/design-studio:/config/Design Studio
+    ports:
+      - "127.0.0.1:3200:3000"
+
+  qgis:
+    <<: *desktop
+    build: ./qgis
+    image: design-studio/qgis:latest
+    environment:
+      <<: *desktop-env
+      TITLE: QGIS
+    volumes:
+      - ./data/qgis:/config
+      - /srv/design-studio:/config/Design Studio
+    ports:
+      - "127.0.0.1:3300:3000"
+
+  # Phase 6 (optional): Nextcloud Whiteboard collaboration backend.
+  # Start with: docker compose --profile whiteboard up -d
+  # To reach it through a Cloudflare tunnel, change the port line to "3002:3002".
+  whiteboard:
+    profiles: ["whiteboard"]
+    image: ghcr.io/nextcloud-releases/whiteboard:stable
+    restart: unless-stopped
+    environment:
+      NEXTCLOUD_URL: ${NEXTCLOUD_URL:-https://cloud.butterflyassets.com}
+      JWT_SECRET_KEY: ${WHITEBOARD_JWT_SECRET:?WHITEBOARD_JWT_SECRET must be set in .env}
+    ports:
+      - "127.0.0.1:3002:3002"

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Tomcat for the Design Studio floor plan editor.
+
+  Only reachable through `tailscale serve`, which terminates HTTPS on
+  ${studio.host}:${studio.port}. The proxy settings make Tomcat build every
+  URL with that public address, and the editor stores those URLs inside each
+  saved plan. That is why STUDIO_HOST must never change once plans exist.
+-->
+<Server port="-1" shutdown="SHUTDOWN">
+  <Listener className="org.apache.catalina.startup.VersionLoggerListener" />
+  <Listener className="org.apache.catalina.core.JreMemoryLeakPreventionListener" />
+  <Listener className="org.apache.catalina.core.ThreadLocalLeakPreventionListener" />
+
+  <Service name="Catalina">
+    <Connector port="8080" protocol="HTTP/1.1"
+               connectionTimeout="20000"
+               proxyName="${studio.host}" proxyPort="${studio.port}"
+               scheme="https" secure="true"
+               URIEncoding="UTF-8"
+               maxPostSize="67108864"
+               maxSwallowSize="67108864"
+               compression="on"
+               compressibleMimeType="text/html,text/css,text/plain,text/xml,application/javascript,application/json,image/svg+xml" />
+
+    <Engine name="Catalina" defaultHost="localhost">
+      <Host name="localhost" appBase="webapps" unpackWARs="false" autoDeploy="false">
+        <Valve className="org.apache.catalina.valves.ErrorReportValve"
+               showReport="false" showServerInfo="false" />
+      </Host>
+    </Engine>
+  </Service>
+</Server>

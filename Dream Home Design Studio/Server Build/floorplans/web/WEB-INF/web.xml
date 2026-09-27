@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<web-app xmlns="http://xmlns.jcp.org/xml/ns/javaee"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://xmlns.jcp.org/xml/ns/javaee http://xmlns.jcp.org/xml/ns/javaee/web-app_4_0.xsd"
+         version="4.0" metadata-complete="true">
+  <display-name>Design Studio</display-name>
+
+  <filter>
+    <filter-name>studio</filter-name>
+    <filter-class>studio.StudioFilter</filter-class>
+  </filter>
+  <filter-mapping>
+    <filter-name>studio</filter-name>
+    <url-pattern>/*</url-pattern>
+  </filter-mapping>
+
+  <servlet>
+    <servlet-name>api</servlet-name>
+    <servlet-class>studio.StudioApi</servlet-class>
+  </servlet>
+  <servlet-mapping>
+    <servlet-name>api</servlet-name>
+    <url-pattern>/api/*</url-pattern>
+  </servlet-mapping>
+
+  <!-- readHome.jsp keeps a reference copy of the open plan in the session.
+       Twelve hours covers a long design session with the iPad asleep. -->
+  <session-config>
+    <session-timeout>720</session-timeout>
+    <cookie-config>
+      <http-only>true</http-only>
+      <secure>true</secure>
+    </cookie-config>
+  </session-config>
+
+  <mime-mapping>
+    <extension>webmanifest</extension>
+    <mime-type>application/manifest+json</mime-type>
+  </mime-mapping>
+  <mime-mapping>
+    <extension>json</extension>
+    <mime-type>application/json</mime-type>
+  </mime-mapping>
+
+  <welcome-file-list>
+    <welcome-file>index.html</welcome-file>
+  </welcome-file-list>
+</web-app>

@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Design Studio</title>
+<meta name="description" content="Floor plans, CAD, 3D and maps for Butterfly Assets.">
+<meta name="theme-color" content="#2f5d50">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Design Studio">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/svg+xml" href="icons/icon.svg">
+<link rel="apple-touch-icon" href="icons/apple-touch-icon.png">
+<link rel="stylesheet" href="studio.css">
+<script src="studio.js" defer></script>
+</head>
+<body>
+<header class="top">
+  <div class="brand">
+    <img src="icons/icon.svg" alt="" width="40" height="40">
+    <div>
+      <h1>Design Studio</h1>
+      <p class="sub">Butterfly Assets</p>
+    </div>
+  </div>
+</header>
+
+<main>
+  <section aria-labelledby="plans-title">
+    <div class="section-head">
+      <h2 id="plans-title">Floor plans</h2>
+      <button type="button" class="primary" id="new-plan-button">New plan</button>
+    </div>
+
+    <form id="new-plan-form" class="new-plan" hidden>
+      <label for="new-plan-name">Plan name</label>
+      <div class="row">
+        <input id="new-plan-name" name="name" type="text" maxlength="80" autocomplete="off"
+               autocapitalize="words" placeholder="e.g. Main House Ground Floor" required>
+        <button type="submit" class="primary">Create</button>
+        <button type="button" class="ghost" id="new-plan-cancel">Cancel</button>
+      </div>
+      <p class="hint">Letters, numbers, spaces, hyphens, commas, plus signs and brackets.</p>
+    </form>
+
+    <p id="message" class="message" role="status" aria-live="polite" hidden></p>
+
+    <ul id="plans" class="plans" aria-busy="true"></ul>
+    <div id="plans-empty" class="empty" hidden>
+      <p><strong>No floor plans yet.</strong></p>
+      <p>Tap <em>New plan</em> to start drawing walls, rooms and furniture.</p>
+    </div>
+  </section>
+
+  <section aria-labelledby="tools-title">
+    <h2 id="tools-title">Tools</h2>
+    <p class="section-note">The desktops open in a new tab and ask for the studio desktop login.</p>
+    <div class="tools">
+      <a class="tool" id="tool-freecad" target="_blank" rel="noopener">
+        <span class="tool-name">FreeCAD</span>
+        <span class="tool-desc">Precise parts, framing and construction drawings</span>
+      </a>
+      <a class="tool" id="tool-blender" target="_blank" rel="noopener">
+        <span class="tool-name">Blender</span>
+        <span class="tool-desc">Renders, lighting and walkthroughs</span>
+      </a>
+      <a class="tool" id="tool-qgis" target="_blank" rel="noopener">
+        <span class="tool-name">QGIS</span>
+        <span class="tool-desc">Lot lines, site plans and maps</span>
+      </a>
+      <a class="tool" id="tool-drive" target="_blank" rel="noopener" hidden>
+        <span class="tool-name">Butterfly Drive</span>
+        <span class="tool-desc">The Design Studio folder: rename, delete and share files here</span>
+      </a>
+    </div>
+  </section>
+
+  <section class="notes" aria-labelledby="notes-title">
+    <h2 id="notes-title">Good to know</h2>
+    <ul>
+      <li>Plans save as you draw. Edit a plan on one device at a time, or the edits overwrite each other.</li>
+      <li>Every plan is a <code>.sh3d</code> file in <strong>Design Studio/Floor Plans</strong> on the Butterfly Drive, and opens in desktop Sweet Home 3D.</li>
+      <li>To rename or delete a plan, use the Butterfly Drive. Deleted plans then go to Deleted files.</li>
+      <li>In the desktops, your files are in the <strong>Design Studio</strong> folder.</li>
+    </ul>
+  </section>
+</main>
+</body>
+</html>
